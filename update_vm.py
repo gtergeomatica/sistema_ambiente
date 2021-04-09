@@ -19,9 +19,13 @@ import logging
 
 from credenziali import *
 
+# recupero il percorso allo script python 
+spath=os.path.dirname(os.path.realpath(__file__)) 
+
 logging.basicConfig(
     format='%(asctime)s\t%(levelname)s\t%(message)s',
-    #filename='def.log',
+    filemode='w', # overwrite or append 
+    filename='{}/log/def.log'.format(spath),
     level=logging.INFO)
 
 
