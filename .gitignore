@@ -1,6 +1,6 @@
 credenziali.py
 log/*.log
-
+conn.php
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
