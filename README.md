@@ -53,6 +53,8 @@ bot_token='XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' #bot per notifiche file scari
 chatID_lorenzo='XXXXXXXXX'
 
 link='https://www.gishosting.gter.it/si_ambiente'
+
+G_API_KEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 ```
 
 

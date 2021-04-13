@@ -14,6 +14,7 @@ import random
 
 import emoji
 import telepot
+#import url_shortener #, short_url
 
 #python 3
 from telepot.aio.loop import MessageLoop
@@ -70,6 +71,11 @@ chat_id=''
 id_mira=''
 
 
+
+def tiny_url(url):
+    apiurl = "http://tinyurl.com/api-create.php?url="
+    tinyurl = urlopen(apiurl + url).read()
+    return tinyurl.decode("utf-8")
 
 def lista_percorsi_blu():
     #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
@@ -428,7 +434,79 @@ attendi alcuni istanti e ne riceverai l'esito '''.format(self.nome, self.cognome
             par_giro=query_data.split('_')
             col=par_giro[0]
             giro=par_giro[1]
+            link_mappa="https://gishosting.gter.it/sa/map_sis_ambiente.php?c={}&g={}".format(col,giro)
+            kml="https://gishosting.gter.it/sa/kml_sis_ambiente.php?c={}&g={}".format(col,giro)
+            logging.info(link_mappa)
+
+            # estraggo i vertici della linea
+            # query_vertici= '''SELECT st_y(geom2) as lat, st_x(geom2) as lon 
+            #     FROM (
+            #     SELECT st_transform((ST_DumpPoints(geom)).geom, 4326) AS geom2 
+            #     from percorsi.v_giri g 
+            #     where zona='{}' and giro='{}') foo;'''.format(col, giro)
             
+
+
+            # estraggo tutti i punti di partenza delle linestring che compongono il giro
+            query_vertici= '''SELECT st_y(st_startpoint(geom2)) as lat_start, st_x(st_startpoint(geom2)) as lon_start 
+                FROM (
+                SELECT st_transform((ST_Dump(geom)).geom, 4326) AS geom2 
+                    from percorsi.v_giri g 
+                where zona='{}' and giro='{}'
+                ) foo;'''.format(col, giro)
+
+
+            try:
+                conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
+                conn.set_session(autocommit=True)
+                cur = conn.cursor()
+                cur.execute(query_vertici)
+                vertici=cur.fetchall()
+            except Exception as e:
+                logging.error(e)
+
+            logging.debug(query_vertici)
+            #logging.debug(stazioni)
+
+            #messaggio= "\033[1m"+'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'+"\033[0m"
+            link_gmaps= 'https://www.google.com/maps/dir/?api=1&'
+            lat=[]
+            lon=[]
+            for v in vertici:
+                #link_gmaps = '{}/{},{}'.format(link_gmaps,round(v[0],6),round(v[1],6)) 
+                lat.append(v[0])
+                lon.append(v[1])
+
+            n=len(lat)
+            link_gmaps='{}origin={},{}&destination={},{}&dir_action=navigate&travelmode=driving&waypoints='.format(link_gmaps,lat[0],lon[0],lat[n-1],lon[n-1])
+
+            i=1
+            while i < n-1:
+                link_gmaps='{}|{},{}'.format(link_gmaps,lat[i],lon[i])
+                i+=1
+
+
+
+            logging.debug(link_gmaps)
+            apiurl = "http://tinyurl.com/api-create.php?url="
+            tinyurl = urlopen(apiurl + link_gmaps).read()
+            link_gmaps2 = tinyurl.decode("utf-8")
+            #link_gmaps = tinyurl(link_gmaps)
+            logging.debug(link_gmaps2)
+            sent = "Clicca sul link {0} per visualizzare il giro su google maps.".format(link_gmaps)
+
+            #link_mappa=short_url.encode_url(link_mappa)
+            #kml=short_url.encode_url(kml)
+            sent = "Clicca sul link {0} per visualizzare il giro su google maps.\n Visualizza il KML {1} o scaricalo {2} ".format(link_gmaps, link_mappa, kml)
+            
+            logging.debug(sent)
+            check+=1
+            logging.debug('Check = {}'.format(check))
+            await self.editor.editMessageText(sent)
+            
+
+            
+
     
 
 
