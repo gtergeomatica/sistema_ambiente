@@ -40,8 +40,8 @@
     <!--div id="capture"></div-->
     <script>
       var map;
-      var src = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml';
-      //var src = './kml_sis_ambiente.php?c=<?php echo $col;?>&g=<?php echo $giro;?>';
+      //var src = 'https://developers.google.com/maps/documentation/javascript/examples/kml/westcampus.kml';
+      var src = 'https://gishosting.gter.it/sa/kml_sis_ambiente.php?c=<?php echo $col;?>&g=<?php echo $giro;?>';
 
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
@@ -63,7 +63,7 @@
       }
     </script>
     <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBHWwU-cILRrgdqAWqcPHZlNThAdrrSrcM&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=<?php echo $G_API_KEY;?>&callback=initMap">
     </script>
   </body>
 </html>
