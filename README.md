@@ -14,9 +14,11 @@ Bot telegram
 Il bot è stato creato con BotFather (inizialmente da Roberto Marzocchi, ma la proprietà pèuò essere cambiata)
 
 
-[!bot_father](./img/bot_father.PNG)
+[!bot_father](img/bot_father.PNG)
 
 [!bot_father](./img/bot_father2.PNG)
+
+
 Nome bot: @sistema_ambiente_percorsi
 
 
