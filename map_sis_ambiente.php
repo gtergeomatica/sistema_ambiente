@@ -1,6 +1,7 @@
 <?php 
   $col = pg_escape_string($_GET['c']);
   $giro = pg_escape_string($_GET['g']);
+  require('./conn.php');
 ?>
 
 <!DOCTYPE html>
