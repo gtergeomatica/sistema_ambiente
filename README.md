@@ -106,7 +106,7 @@ Invia un testo qualunque (es. xx) per procedere e segui le istruzioni.
 e la seguente icona: 
 
 
-![percorsi_v qgs](https://user-images.githubusercontent.com/4061154/115054574-a8653500-9ee0-11eb-95fc-6764019254dd.png)
+![percorsi_v qgs](https://user-images.githubusercontent.com/4061154/115054574-a8653500-9ee0-11eb-95fc-6764019254dd.png  {width=150px height=150px})
 
 
 
