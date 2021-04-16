@@ -14,9 +14,12 @@ Bot telegram
 Il bot è stato creato con BotFather (inizialmente da Roberto Marzocchi, ma la proprietà pèuò essere cambiata)
 
 
-[!bot_father](img/bot_father.PNG)
+![bot_father](https://user-images.githubusercontent.com/4061154/115054392-7522a600-9ee0-11eb-8866-4db76c5ea96d.PNG)
 
-[!bot_father](./img/bot_father2.PNG)
+
+![bot_father2](https://user-images.githubusercontent.com/4061154/115054558-a307ea80-9ee0-11eb-8c1f-ddd4b1095d12.PNG)
+
+
 
 
 Nome bot: @sistema_ambiente_percorsi
@@ -101,7 +104,15 @@ Per maggiori informazioni sui percorsi è possibile scrivere a g.cascini@sistema
 Invia un testo qualunque (es. xx) per procedere e segui le istruzioni. 
 
 e la seguente icona: 
-[!percorsi_v.qgis](./img/percorsi_v.qgs.png)
+
+
+![percorsi_v qgs](https://user-images.githubusercontent.com/4061154/115054574-a8653500-9ee0-11eb-95fc-6764019254dd.png)
+
+
+
+Ecco l'anteprima del bot 
+
+![image](https://user-images.githubusercontent.com/4061154/115054627-bc109b80-9ee0-11eb-9caf-c1ca2f5b01b7.png)
 
 
 così come tre tasti analoghi qualora non si usi un comando riconosciuto dal bot
