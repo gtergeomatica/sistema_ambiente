@@ -13,6 +13,10 @@ Bot telegram
 ------------------------------------------------------------------
 Il bot è stato creato con BotFather (inizialmente da Roberto Marzocchi, ma la proprietà pèuò essere cambiata)
 
+
+[!bot_father](./img/bot_father.PNG)
+
+[!bot_father](./img/bot_father2.PNG)
 Nome bot: @sistema_ambiente_percorsi
 
 
@@ -87,11 +91,15 @@ help - Aiuto
 
 la seguente descrizione: 
 
+
 Si tratta di un bot telegram ad uso interno del personale di Sistema Ambiente per visualizzare i percorsi su mappa. Il bot si appoggia al servizio in cloud https://www-gishosting.gter.it. 
 
 Per maggiori informazioni sui percorsi è possibile scrivere a g.cascini@sistemaambientelucca.it, sul bot telegram a info@gter.it
 
 Invia un testo qualunque (es. xx) per procedere e segui le istruzioni. 
+
+e la seguente icona: 
+[!percorsi_v.qgis](./img/percorsi_v.qgs.png)
 
 
 così come tre tasti analoghi qualora non si usi un comando riconosciuto dal bot
