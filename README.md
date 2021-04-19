@@ -23,9 +23,11 @@ Nome bot: @sistema_ambiente_percorsi
 
 servono le librerie telepot e emoji che si possono installare con pip3
 
+(telepot non supporta gli ultimi sviluppi per cui meglio usare il seguente fork)
+
 e.g.
 ```
-sudo pip3 install telepot
+sudo pip3 install git+https://github.com/MoumenKhadr/telepot.git --upgrade
 ```
 
 Il bot telegram è sempre in ascolto. 

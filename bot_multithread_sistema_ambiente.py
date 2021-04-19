@@ -112,7 +112,7 @@ def lista_percorsi(colore):
     #logging.debug(stazioni)
 
     #messaggio= "\033[1m"+'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'+"\033[0m"
-    messaggio= '{} Clicca sul bottone per visulaizzare il giro su mappa'.format(emoji.emojize(" :backhand_index_pointing_down:)", use_aliases=True), emoji.emojize(" :world_map:)", use_aliases=True))
+    messaggio= '{} Clicca sul bottone per visualizzare il giro su mappa'.format(emoji.emojize(" :backhand_index_pointing_down:)", use_aliases=True), emoji.emojize(" :world_map:)", use_aliases=True))
     inline_array = []
     for s in stazioni:
         logging.debug(s)
@@ -140,89 +140,6 @@ def lista_percorsi(colore):
     return messaggio, keyboard
 
 
-def stato_stazioni():
-    #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
-    # ora mi connetto al DB
-    conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
-    conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    query='SELECT cod, host, port FROM concerteaux.stazioni_lowcost;'
-    try:
-        cur.execute(query)
-        stazioni=cur.fetchall()
-    except Exception as e:
-        logging.info(e)
-
-    logging.debug(query)
-    logging.debug(stazioni)
-
-    #messaggio= "\033[1m"+'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'+"\033[0m"
-    messaggio= 'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'
-    for s in stazioni:
-        host='http://{}:{}'.format(s[1],s[2])
-        status=station_on(host)
-        logging.info(status)
-        if status=='t':
-            messaggio+='{}:  operativa {}\n'.format(s[0],emoji.emojize(" :white_check_mark:", use_aliases=True))   
-        elif status=='f':
-            messaggio+='{}:  non operativa {}\n'.format(s[0], emoji.emojize(" :x:", use_aliases=True))
-
-    logging.info(messaggio)
-    #logging.info(messaggio)
-    return messaggio
-
-
-
-def update_utenti_tgr(cid, name, lastname):
-    '''
-    funzione per aggiungere il chat di un utente sulla tabella nel DB concerteaux
-    '''
-    
-    conn1 = psycopg2.connect(host=p.ip, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
-    conn1.set_session(autocommit=True)
-    cur1 = conn1.cursor()
-    logging.debug('connesso al DB')
-    query='INSERT INTO concerteaux.telegram_utenti(telegram_id, nome, true) VALUES (\'{}\', \'{} {}\',,\'t\');'.format(cid,lastname,name)
-    logging.debug(query)
-    try:
-        cur1.execute(query)
-        
-    except Exception as e:
-        logging.warning(e)
-        query= '''
-        UPDATE concerteaux.telegram_utenti SET nome=\'{} {}\', valido ='t' 
-        WHERE telegram_id=\'{}\';'''.format(lastname,name,cid)
-        cur1.execute(query)
-    cur1.close()
-    conn1.close()
-
-
-
-
-def remove_utenti_tgr(cid, name, lastname):
-    '''
-    funzione per rimuovere il chat di un utente sulla tabella nel DB concerteaux
-    '''
-    
-    conn1 = psycopg2.connect(host=p.ip, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
-    conn1.set_session(autocommit=True)
-    cur1 = conn1.cursor()
-    logging.debug('connesso al DB')
-    query='INSERT INTO concerteaux.telegram_utenti(telegram_id, nome, valido) VALUES (\'{}\', \'{} {}\',\'f\');'.format(cid,lastname,name)
-    logging.debug(query)
-    try:
-        cur1.execute(query)
-        
-    except Exception as e:
-        logging.warning(e)
-        query= '''
-        UPDATE concerteaux.telegram_utenti SET nome=\'{} {}\', valido ='f' 
-        WHERE telegram_id=\'{}\';'''.format(lastname,name,cid)
-        cur1.execute(query)
-    cur1.close()
-    conn1.close()
-
-
 
 # questa classe usa il ChatHandler telepot.aio.helper.ChatHandler (ossia è in ascolto della chat del BOT)
 class MessageCounter(telepot.aio.helper.ChatHandler):
@@ -237,7 +154,7 @@ class MessageCounter(telepot.aio.helper.ChatHandler):
         global check
         global testo_segnalazione
         global testo_segnalazione20
-        global allegato
+        #global allegato
         global chat_id
         global id_mira
         self._check1 = check
@@ -255,14 +172,14 @@ class MessageCounter(telepot.aio.helper.ChatHandler):
             logging.info("Non è arrivato nessun messaggio")
         
         # per ora le immagini non servono
-        # try:
-        #     if content_type == 'photo':
-        #         await self.bot.download_file(msg['photo'][-1]['file_id'], '\tmp\file_bot.png')
-        #         allegato = '\tmp\file_bot.png'
-        #         logging.info("Immagine recuperata")
-        #         command="foto"
-        # except:
-        #     logging.info("Non è arrivato nessuna immagine")
+        try:
+             if content_type == 'photo':
+                 await self.bot.download_file(msg['photo'][-1]['file_id'], '\tmp\file_bot.png')
+                 allegato = '\tmp\file_bot.png'
+                 logging.info("Immagine recuperata")
+                 command="foto"
+        except:
+             logging.info("Non è arrivato nessuna immagine")
 
         try:
             nome = msg["from"]["first_name"]
