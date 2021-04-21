@@ -7,6 +7,10 @@ Update giornaliero vista materializzata
 - update_vm.py: script per l'update giornaliero della vista materializzata
 
 
+Elaborazione dei dati OSM per il calcolo  dei percorsi con pg routing
+------------------------------------------------------------------
+- osm_downloader.py: script per il download deli dati osm con tag 'highway'
+- osm2db.py: script per l'upload dei dati osm sul db postgres
 
 
 Bot telegram
