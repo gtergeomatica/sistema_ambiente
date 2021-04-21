@@ -1,8 +1,14 @@
+#bot telegram
 credenziali.py
 log/*.log
 conn.php
 bot.pid
 crash.log
+
+
+#routing
+routing/osm_data/*.osm
+routing/conn.py
 
 
 
@@ -135,3 +141,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode/settings.json
