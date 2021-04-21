@@ -3,7 +3,7 @@
 import requests
 import json
 import os
-#from conn import *
+from conn import *
 import logging
 logging.basicConfig(
     format='%(asctime)s\t%(levelname)s\t%(message)s',
@@ -11,12 +11,6 @@ logging.basicConfig(
     level=logging.INFO)
 
 logging.info('*'*20 + ' NUOVA ESECUZIONE ' + '*'*20)
-
-
-#definizione file di output
-outdir = os.path.dirname(os.path.realpath(__file__))
-osm_file = os.path.join(outdir,'dati_osm_lucca.osm')
-logging.info(osm_file)
 
 
 #query sul database OSM per estrazione del tag highway 
