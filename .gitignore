@@ -1,9 +1,10 @@
 #bot telegram
 credenziali.py
 log/*.log
-conn.php
+richiesta/conn.php
 bot.pid
 crash.log
+
 
 
 #routing
