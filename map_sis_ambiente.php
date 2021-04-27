@@ -1,7 +1,7 @@
 <?php 
   $col = pg_escape_string($_GET['c']);
   $giro = pg_escape_string($_GET['g']);
-  require('./conn.php');
+  require('./richiesta/conn.php');
 ?>
 
 <!DOCTYPE html>

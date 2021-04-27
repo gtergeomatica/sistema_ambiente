@@ -2,7 +2,7 @@
 $col = pg_escape_string($_GET['c']);
 $giro = pg_escape_string($_GET['g']);
 header("Content-Disposition: attachment; filename=".$col."_".$giro.".kml");
-require('./conn.php');
+require('./richiesta/conn.php');
 
 if(!$conn) {
     die('Connessione fallita !<br />');
