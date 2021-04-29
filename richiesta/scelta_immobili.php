@@ -103,8 +103,8 @@ require('navbar.php');
                             if ($check_civico==0){
                                 // non ho trovato il civico (c=1) renindirizzo a una pagina dove l'utente può scegliere un altro civico 
                                 echo 'Non trovo corrispondenza con il civico sullo stradario comunale';
-                                echo ' <a href="correggi_civico.php?c=1&num='.$num.'&nome='.$nome.'&cognome='.$cognome.'"';
-                                echo ' class="btn btn-secondary"> E\' sbagliato. Scegli un altro civico </a>';
+                                echo ' <a href="correggi_civico.php?c=1&ci='.$r['codimm'].'&num='.$num.'&nome='.$nome.'&cognome='.$cognome.'"';
+                                echo ' class="btn btn-secondary"> Scegli un altro civico o segnalaci dove si trova il tuo civico </a>';
 
                             } else if ($check_civico==1) {
                                 //echo 'Il civico ha le seguenti coordinate '.$lat.' '.$lon.' ';
@@ -132,7 +132,7 @@ require('navbar.php');
                                 echo ' class="btn btn-success"> E\' il civico di esposizione </a>';
                                 echo ' - ';
                                 echo ' <a href="correggi_civico.php?c=0&num='.$num.'&nome='.$nome.'&cognome='.$cognome.'#about"';
-                                echo ' class="btn btn-secondary"> E\' sbagliato. Scegli un altro civico </a>';
+                                echo ' class="btn btn-secondary"> Espongo in corrispondenza di altro civico </a>';
                             } else if ($check_civico==1) {
                                 echo 'Civico multiplo su stradario comunale';
                             }
@@ -143,7 +143,7 @@ require('navbar.php');
 
                         if ($check==0){
                             echo "Non esistono immobili intestati a <b>".$cognome." ".$nome."</b> con numero di contratto <b>".$num."</b>";
-                            
+                            echo "<br> Verifica di aver inserito correttamente i dati o che il tuo contratto TARI sia attivo.";
                         }
                         //echo "</ul>";
 
