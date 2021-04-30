@@ -4,8 +4,8 @@ log/*.log
 richiesta/conn.php
 bot.pid
 crash.log
-
-
+ws_way/token_api.py
+ws_way/log/*.log
 
 #routing
 routing/osm_data/*.osm
