@@ -11,13 +11,19 @@
 
 
 import os, sys, re  # ,shutil,glob
-
+import numpy as np
 import getopt  # per gestire gli input
 
 #import pymssql
 
 import psycopg2
-#import credenziali as p
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+from credenziali import db, port, user, pwd, host
+
+
 import requests
 
 import logging
@@ -110,14 +116,62 @@ def main():
     
     
     risposta=GetVehicleList(token)
-    #print(risposta[0])
-    id_mezzi=risposta[0]
-    i=0
-    while i < len(id_mezzi):
-        print(id_mezzi[i])
-        i+=1
 
-    # sono da caricare i mezzi sul DB PostgreSQL
+
+    # carico i mezzi sul DB PostgreSQL
+    logging.info('Connessione al db')
+    conn = psycopg2.connect(dbname=db,
+                        port=port,
+                        user=user,
+                        password=pwd,
+                        host=host)
+
+    curr = conn.cursor()
+    conn.autocommit = True
+
+    #create table query
+    create_table_query = ''' CREATE TABLE IF NOT EXISTS ws_way.t_mezzi (
+                            id SERIAL PRIMARY KEY,
+                            id_mezzo varchar,
+                            nome varchar,
+                            targa varchar,
+                            brand varchar,
+                            modello varchar)  '''
+
+    
+    try:
+	    curr.execute(create_table_query)
+	    conn.commit()
+	    logging.info(''' Creata tabella dei mezzi''')
+    except Exception as e:
+	    logging.error(e)                            
+    
+    #insert table query
+    #organizzo i dati per l'insert
+    n_mezzi= len(risposta[0])
+    a = np.array([['ND' if i is None else i for i in risposta[0]],
+                 ['ND' if i is None else i for i in risposta[1]],
+                 ['ND' if i is None else i for i in risposta[2]],
+                ['ND' if i is None else i for i in risposta[3]],
+                ['ND' if i is None else i for i in risposta[4]]])    
+    
+    b = np.transpose(a)
+    c = b.tolist()
+    d = [tuple(i) for i in c]
+
+    records_list_template = ','.join(['%s'] *n_mezzi )
+    insert_query = '''INSERT INTO ws_way.t_mezzi (id_mezzo, nome,targa, brand, modello) values {}'''.format(records_list_template)
+
+    #con la funzione mogrify metto in successione la query scritta prima con l'array
+    query_insert2=curr.mogrify(insert_query, d).decode('utf8')
+
+    # lancio la query dentro un try per segnalare eventuali errori
+    try:
+	    curr.execute(query_insert2)
+	    conn.commit()
+	    logging.info('''INSERT MEZZI CONCLUSO''')
+    except Exception as e:
+	    logging.error(e)
 
     # ciclo sui mezzi
 
@@ -126,7 +180,7 @@ def main():
     # e GetVehicleLastEvent
 
 
-
+    '''
     exit()
     IdSegnalante = t.IdSegnalante
     risposta=[]
@@ -140,7 +194,7 @@ def main():
         # print('OK')
         return 200
     # ORA SI RICHIAMA IL WS
-
+    '''
 
 if __name__ == "__main__":
     main()
