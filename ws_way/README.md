@@ -10,4 +10,6 @@ Un applicativo utilissimo è SOAP UI
 Project --> New REST Service from URI 
 
 
+![image](https://user-images.githubusercontent.com/4061154/116724929-8a6bfa00-a9e1-11eb-80d7-f154dbfea242.png)
 
+Con cui si possono testare i WS a livello di input e vedere un anteprima dell'XML di output
