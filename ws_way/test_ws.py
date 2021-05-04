@@ -42,7 +42,7 @@ from xml.etree.ElementTree import parse
 
 def GetVehicleList(token):
     
-    ''' Ottengo XML con lalista dei veicoli di SistemaAmbiente
+    ''' Ottengo XML con la lista dei veicoli di SistemaAmbiente
     unico input è il token che scade dopo un'ora di inattività'''
 
     url = t.url
@@ -96,6 +96,9 @@ def GetVehicleHistoryEvents(token):
     ''' Ottengo XML con lalista dei veicoli di SistemaAmbiente
     unico input è il token che scade dopo un'ora di inattività'''
 
+
+    
+
 def main():
     # recupero il token 
     r= requests.get('{}/GetToken'.format(t.url), params={'serverName':t.servername, 'userName':t.username, 'password':t.password})
@@ -118,7 +121,9 @@ def main():
 
     # ciclo sui mezzi
 
-    # per ogni mezzo usare due funzionid a definire che chiamino i 2 metodi GetVehicleHistoryEvents (la storia precedente) e GetVehicleLastEvent
+    # per ogni mezzo usare due funzioni a definire che chiamino i 2 metodi 
+    # GetVehicleHistoryEvents (la storia precedente) 
+    # e GetVehicleLastEvent
 
 
 
