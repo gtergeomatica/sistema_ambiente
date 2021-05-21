@@ -52,6 +52,7 @@ logging.basicConfig(format='%(asctime)s\t%(levelname)s\t%(message)s',
     filemode='a', # overwrite or append
     filename=logfile,
     level=logging.WARNING)
+    #level=logging.DEBUG)
 
 
 
@@ -139,7 +140,52 @@ def lista_percorsi(colore):
     logging.info(messaggio)
     return messaggio, keyboard
 
+def lista_mezzi(str_targa=''): #targa completa o primi caratteri della targa 
+    #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
+    # ora mi connetto al DB
+    conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
+    conn.set_session(autocommit=True)
+    cur = conn.cursor()
+    query='''select nome, targa, brand, modello from ws_way.t_mezzi  
+             where targa ilike '{}%' order by targa;'''.format(str_targa.strip())
+    try:
+        cur.execute(query)
+        stazioni=cur.fetchall()
+    except Exception as e:
+        logging.error(e)
 
+    logging.debug(query)
+    #logging.debug(stazioni)
+
+    #messaggio= "\033[1m"+'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'+"\033[0m"
+    messaggio= '{0} Clicca sul bottone per scegliere il mezzo {1}'.format(emoji.emojize(" :backhand_index_pointing_down: ", use_aliases=True), emoji.emojize(" :truck: ", use_aliases=True))
+    inline_array = []
+    for s in stazioni:
+        logging.debug(s)
+        testo_bottone='Mezzo con targa {} - brand: {} - modello {}\n'.format(s[1], s[2], s[3])   
+        logging.debug(testo_bottone)
+        cod='sceltamezzo_{}_{}'.format(str_targa,s[1])
+        inline_array.append(InlineKeyboardButton(text=testo_bottone, callback_data=cod))
+
+    logging.debug(inline_array)
+    keyboard_elements = [[element] for element in inline_array]
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_elements )
+    # vidlist = ""
+    # for row in mire:
+    #         vidlist = vidlist+"[InlineKeyboardButton(text='"+str(row[1])+"', callback_data='"+str(row[0])+"')],"
+    # vidlist = vidlist+"]"
+    # print(vidlist)
+    #keyboard = InlineKeyboardMarkup(inline_keyboard=[vidlist])
+    
+    conn.close()
+    
+    if keyboard == []:
+        messaggio = '{} Nessun mezzo corrispondente alla targa fornita. Ritenta!'.format(emoji.emojize(" :no_entry_sign: ", use_aliases=True))
+
+    #logging.info(messaggio)
+    logging.info(messaggio)
+    return messaggio, keyboard
 
 # questa classe usa il ChatHandler telepot.aio.helper.ChatHandler (ossia è in ascolto della chat del BOT)
 class MessageCounter(telepot.aio.helper.ChatHandler):
@@ -213,19 +259,31 @@ class MessageCounter(telepot.aio.helper.ChatHandler):
             await self.sender.sendMessage(sent)
             testo, bottoni = lista_percorsi('G')
             await self.sender.sendMessage(testo, reply_markup=bottoni)
+
+            
+        # elif command == '/avvia_giro' or command.startswith('/avvia_giro'):
+        #     sent = '{0} - Gentile {1} {2} stai per scegliere il mezzo per avviare un giro {3}:'.format(self._count,nome, cognome, emoji.emojize(" :white_check_mark:", use_aliases=True))
+        #     logging.info(sent)
+        #     await self.sender.sendMessage(sent)
+        #     targa_str = ''.join(command.split()[-1].strip())
+        #     logging.debug(targa_str)
+        #     testo, bottoni = lista_mezzi(targa_str)
+        #     await self.sender.sendMessage(testo, reply_markup=bottoni)
+            
         else:
-                keyboard = InlineKeyboardMarkup(inline_keyboard=[                           
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[                           
                              [InlineKeyboardButton(text='Lista percorsi blu', callback_data='percorsi_blu')],
                              [InlineKeyboardButton(text='Lista percorsi rossi', callback_data='percorsi_rossi')],
                              [InlineKeyboardButton(text='Lista percorsi gialli', callback_data='percorsi_gialli')],
                              [InlineKeyboardButton(text='Link a webGIS', callback_data='sito')],
+                             #[InlineKeyboardButton(text='Avvia giro', callback_data='sceltamezzo')],
                              #[InlineKeyboardButton(text='Time', callback_data='time')],
                          ])
                 #bot.sendMessage(chat_id, 'Gentile {0} {1} questo è un bot configurato per alcune operazioni minimali, quanto hai scritto non è riconosciuto, invece di fotterti prova con i seguenti tasti:'.format(nome,cognome), reply_markup=keyboard)
-                message = "Gentile {} {}, questo è un bot configurato per fornire i percorsi di raccolta di Sistema Ambiente SPA (Lucca).".format(nome, cognome)
+            message = "Gentile {} {}, questo è un bot configurato per fornire i percorsi di raccolta di Sistema Ambiente SPA (Lucca).".format(nome, cognome)
                           #"\nIl comando che hai inserito non è riconosciuto dal sistema, " \
                           #"prova a usare i comandi definiti o ancora più semplicemente i seguenti tasti seguenti:".format(nome, cognome)
-                await self.sender.sendMessage(message, reply_markup=keyboard)
+            await self.sender.sendMessage(message, reply_markup=keyboard)
 
 
 # questa classe usa il CallbackQueryOriginHandler telepot.aio.helper.CallbackQueryOriginHandler 
@@ -265,6 +323,15 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
         testo, bottoni = lista_percorsi(color)
         await self.editor.editMessageText(testo, reply_markup=bottoni)
 
+    '''
+    async def _mezzi(self, str_targa):
+        logging.debug('sono arrivato qua')
+        sent = ''Gentile {0} {1} ecco la lista dei mezzi corrispondeti {2}:''.format(self.nome, self.cognome)
+        logging.info(sent)
+        await self.editor.editMessageText(sent) 
+        testo, bottoni = lista_mezzi(str_targa)
+        await self.editor.editMessageText(testo, reply_markup=bottoni)
+    '''
 
 
     # questa è la funzione che reindirizza i bottoni:
@@ -310,6 +377,13 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             check=1
             logging.info('ho effettivamente schiacciato il bottone sito')
             self._answer = await self._webGIS()
+            
+         #risponde al pulsante in cui si sceglie il mezzo   
+        # elif query_data[0:12] == 'sceltamezzo':
+        #     logging.debug(query_data)
+        #     logging.info('ho effettivamente schiacciato il bottone avvia giro{}'.format(query_data))
+        #     self._answer = await self._mezzi()
+        
         # questo è il secondo gruppo di bottoni creato a partire dal primo tasto
         elif query_data[0:2] in ('B_', 'R_', 'G_'):
             logging.debug(query_data[0:2])
@@ -320,6 +394,7 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             link_mappa="https://gishosting.gter.it/sa/map_sis_ambiente.php?c={}&g={}".format(col,giro)
             kml="https://gishosting.gter.it/sa/kml_sis_ambiente.php?c={}&g={}".format(col,giro)
             logging.info(link_mappa)
+
 
 
 
