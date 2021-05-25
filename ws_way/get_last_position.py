@@ -4,8 +4,8 @@
 # Gter copyleft 2021
 # Author: Roberto Marzocchi - Rossella Ambrosino
 # Script che interroga i WS di WAY srl per ottenere le posizioni dei mezzi
-# lo script è a crontab
-# * * * * * gter /usr/bin/python3 /home/gter/REPOSITORY/sistema_ambiente/ws_way/get_last_position.py > /dev/null 2>&1
+# lo script è a crontab (vedi file con credeziali)
+
 
 
 
