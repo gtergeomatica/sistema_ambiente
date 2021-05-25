@@ -1,1 +1,6 @@
 notebook e file di prova, inserire il path e la key e poi lo script dovrebbe girare
+
+taken from https://openrouteservice.org/, who have all the credits with data from https://www.openstreetmap.org/#map=15/41.8711/12.4846&layers=N
+
+
+with more then 3 vehicles --> ApiError: 413 ({'code': 4, 'error': 'Too many vehicles ( 4 ) in query, maximum is set to 3'})
