@@ -3,3 +3,5 @@ Preso da https://openrouteservice.org/, che detiene tutti i crediti. I dati inve
 
 
 Con più di 3 veicoli --> ApiError: 413 ({'code': 4, 'error': 'Too many vehicles ( 4 ) in query, maximum is set to 3'})
+
+Per installare le librerie utilizzate seguire quanto scritto qui: https://github.com/GIScience/openrouteservice-examples
