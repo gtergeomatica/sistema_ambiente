@@ -466,7 +466,8 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             url_gishosting='www.gishosting.gter.it/lizmap-web-client/lizmap/www/index.php/view/map/'
             repository = 'sisambiente3'
             project='percorsi_progetto_pubblico'
-            layers='B0TTTTTTTF'
+            #layers='B0TTTTTTTF' #per vedere solo i percorsi
+            layers='B0TTTTTTTT'
             epsg=3857
             crs='EPSG:{}'.format(epsg)
             #bbox=
@@ -502,7 +503,7 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             url_gter2 = urllib.parse.urlencode(params)
             url_gter = '{}?{}'.format(url_gishosting, url_gter2)
             logging.debug(url_gter)    
-            sent='Visualizza il percorso su mappa {0} {1} {0}'.format(emoji.emojize(" :world_map:)", use_aliases=True),url_gter)
+            sent='Visualizza il percorso su mappa {0} {1} {0}'.format(emoji.emojize(" :world_map: ", use_aliases=True),url_gter)
             
             
             #link_mappa=short_url.encode_url(link_mappa)
