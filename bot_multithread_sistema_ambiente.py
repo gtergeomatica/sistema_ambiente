@@ -251,7 +251,7 @@ class MessageCounter(telepot.aio.helper.ChatHandler):
             sent = '''{0} - Gentile {1} {2} ecco la lista dei percorsi della zona rossa {3}:'''.format(self._count,nome, cognome, emoji.emojize(" :red_circle:", use_aliases=True))
             logging.info(sent)
             await self.sender.sendMessage(sent)
-            testo, bottoni = lista_percorsi('G')
+            testo, bottoni = lista_percorsi('R')
             await self.sender.sendMessage(testo, reply_markup=bottoni)
         elif command == '/lista_percorsi_gialla':
             sent = '''{0} - Gentile {1} {2} ecco la lista dei percorsi della zona gialla {3}:'''.format(self._count,nome, cognome, emoji.emojize(" :yellow_circle:", use_aliases=True))
