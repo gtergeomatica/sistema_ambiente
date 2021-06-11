@@ -140,7 +140,7 @@ def lista_percorsi(colore):
     logging.info(messaggio)
     return messaggio, keyboard
 
-def lista_mezzi(str_targa=''): #targa completa o primi caratteri della targa 
+def lista_mezzi(codicegiro, str_targa=''): #targa completa o primi caratteri della targa 
     #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
     # ora mi connetto al DB
     conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
@@ -164,7 +164,7 @@ def lista_mezzi(str_targa=''): #targa completa o primi caratteri della targa
         logging.debug(s)
         testo_bottone='Mezzo con targa {} - brand: {} - modello {}\n'.format(s[1], s[2], s[3])   
         logging.debug(testo_bottone)
-        cod='sceltamezzo_{}_{}'.format(str_targa,s[1])
+        cod='_{}_{}'.format(codicegiro,s[1])
         inline_array.append(InlineKeyboardButton(text=testo_bottone, callback_data=cod))
 
     logging.debug(inline_array)
@@ -323,15 +323,25 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
         testo, bottoni = lista_percorsi(color)
         await self.editor.editMessageText(testo, reply_markup=bottoni)
 
-    '''
-    async def _mezzi(self, str_targa):
+    
+    async def _mezzi(self, codicegiro, str_targa=''):
         logging.debug('sono arrivato qua')
-        sent = ''Gentile {0} {1} ecco la lista dei mezzi corrispondeti {2}:''.format(self.nome, self.cognome)
+        color = codicegiro.split('_')[0]
+        giro = codicegiro.split('_')[1]
+
+        if color=='B':
+            em = 'blu {}'.format(emoji.emojize(" :blue_circle:", use_aliases=True))
+        elif color=='G':
+            em = 'giallo {}'.format(emoji.emojize(" :yellow_circle:", use_aliases=True))
+        elif color=='R':
+            em = 'rosso {}'.format(emoji.emojize(" :red_circle:", use_aliases=True))
+
+        sent = '''Grazie per aver selezionato il giro {0} {1}. Ora selezionare il mezzo'''.format(em, giro)
         logging.info(sent)
         await self.editor.editMessageText(sent) 
-        testo, bottoni = lista_mezzi(str_targa)
+        testo, bottoni = lista_mezzi(codicegiro, str_targa)
         await self.editor.editMessageText(testo, reply_markup=bottoni)
-    '''
+    
 
 
     # questa è la funzione che reindirizza i bottoni:
@@ -388,9 +398,17 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
         elif query_data[0:2] in ('B_', 'R_', 'G_'):
             logging.debug(query_data[0:2])
             logging.info('ho effettivamente schiacciato il bottone {}'.format(query_data))
-            par_giro=query_data.split('_')
+            self._answer = await self._mezzi(codicegiro=query_data, str_targa='')
+
+        elif query_data[0:3] in ('_B_', '_R_', '_G_'):
+            logging.debug(query_data[0:2])
+            logging.info('ho effettivamente schiacciato il bottone {}'.format(query_data))
+            par_giro=query_data[1:].split('_')
             col=par_giro[0]
             giro=par_giro[1]
+            mezzo=par_giro[2]
+
+
             link_mappa="https://gishosting.gter.it/sa/map_sis_ambiente.php?c={}&g={}".format(col,giro)
             kml="https://gishosting.gter.it/sa/kml_sis_ambiente.php?c={}&g={}".format(col,giro)
             logging.info(link_mappa)
@@ -472,7 +490,7 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             crs='EPSG:{}'.format(epsg)
             #bbox=
 
-
+            #filtro percorso
             query_filtro='''select id, 
                 replace(replace(replace(st_extent(st_transform(geom,{0}))::text,'BOX(',''),')',''),' ',',')
                 from percorsi.mv_contatori_utenze mcu
@@ -488,6 +506,18 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             except Exception as e:
                 logging.error(e)
 
+            #filtro mezzo 
+            query_filtro_mezzo ='''select id
+                from percorsi.v_last_position v
+                where name = {0}
+                group by id'''.format(mezzo)
+
+            try:
+                cur2 = conn.cursor()
+                cur2.execute(query_filtro_mezzo)
+                filtro_mezzo=cur2.fetchall()
+            except Exception as e:
+                logging.error(e)
 
             
             for f in filtro:
@@ -498,8 +528,9 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
                 'bbox': f[1],
                 'crs':crs,
                 'filter': 'mv_contatori_utenze:"id"+IN+(+{}+)'.format(f[0])
+                #'filter': 'v_last_position:"id"+IN+(+{}+)'.format(f[0])
                 }
-
+            
             url_gter2 = urllib.parse.urlencode(params)
             url_gter = '{}?{}'.format(url_gishosting, url_gter2)
             logging.debug(url_gter)    
@@ -514,6 +545,9 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
             check+=1
             logging.debug('Check = {}'.format(check))
             await self.editor.editMessageText(sent)
+
+    async def new_method(self, query_data):
+        return await self.sender.sendMessage(query_data)
             
 
             
