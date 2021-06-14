@@ -10,7 +10,7 @@
 # Componente lato server del BOT telegram per Sistema Ambiente SPA
 #  
 
-
+import json
 import os.path
 from os import path
 import asyncio
@@ -90,8 +90,14 @@ def tiny_url(url):
     return tinyurl.decode("utf-8")
 
 
+def layer_order(lizmap_cfg_path): #lizmap_config
 
+    with open(lizmap_cfg_path) as json_file:
+        data = json.load(json_file)
 
+    layernames = list(data['layers'].keys())
+    
+    return layernames
 
 
 def lista_percorsi(colore):
@@ -146,13 +152,22 @@ def lista_mezzi(codicegiro, str_targa=''): #targa completa o primi caratteri del
     conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
-    query='''select nome, targa, brand, modello from ws_way.t_mezzi  
-             where targa ilike '{}%' order by targa;'''.format(str_targa.strip())
+    #query su t mezzi manca filtro su data
+    #query='''select name, fleetname from ws_way.t_mezzi  
+    #         where name ilike '%{}%'
+    #         and fleetname not in ('presse', 'cassoni', 'scarrabili', 'siam-wappy')
+    #         order by name limit 50;'''.format(str_targa.strip())
+
+    query='''select name, fleetname from ws_way.v_last_position2
+             where name ilike '%{}%'
+             order by name limit 50;'''.format(str_targa.strip()) 
+
     try:
         cur.execute(query)
         stazioni=cur.fetchall()
     except Exception as e:
         logging.error(e)
+        
 
     logging.debug(query)
     #logging.debug(stazioni)
@@ -162,9 +177,9 @@ def lista_mezzi(codicegiro, str_targa=''): #targa completa o primi caratteri del
     inline_array = []
     for s in stazioni:
         logging.debug(s)
-        testo_bottone='Mezzo con targa {} - brand: {} - modello {}\n'.format(s[1], s[2], s[3])   
+        testo_bottone='Mezzo {}, flotta  {}\n'.format(s[0], s[1])   
         logging.debug(testo_bottone)
-        cod='_{}_{}'.format(codicegiro,s[1])
+        cod='_{}_{}'.format(codicegiro,s[0])
         inline_array.append(InlineKeyboardButton(text=testo_bottone, callback_data=cod))
 
     logging.debug(inline_array)
@@ -481,21 +496,48 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
 
 
             # GISHOSTING
+            #mappa
             url_gishosting='www.gishosting.gter.it/lizmap-web-client/lizmap/www/index.php/view/map/'
             repository = 'sisambiente3'
             project='percorsi_progetto_pubblico'
-            #layers='B0TTTTTTTF' #per vedere solo i percorsi
-            layers='B0TTTTTTTT'
             epsg=3857
             crs='EPSG:{}'.format(epsg)
             #bbox=
 
+            #layers
+            #layers='B0TTTTTTTF' #per vedere solo i percorsi
+            #layers='B0TTTTTTTT'
+            #dal basso verso l'alto 
+            # 'B00000TTF' baselayer? zero ? TTF= true for frazioni and comuni , false per giri
+            #a T or F for giro in giri group
+            #'TTTTTT'  = include anche i mezzi
+            #layers = 'B00000TTF' + 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFT' + 'TTTTTT'
+            
+            #verifico i layer pubblicatisul web
+            layerlist = layer_order(p.lizmap_config)
+            layerlist_giri = [i for i in layerlist if i.startswith('v_giri')]
+            activelayers = ['v_last_position2', 'limiti_amministrativi', 'frazioni',  'giri']
+            
+            #aggiungo il percorso scelto alla listadei layer da rendere visibili
+            percorso_scelto = 'v_giro_{}_{}'.format(col.lower(), giro.lower().replace(' ', ''))
+            activelayers.append(percorso_scelto)
+
+            #costrusico la stringa per l'indirizzo inserendo una 'T' per ogni layer attivo
+            # NB ordine inverso : la lista dei layer deve essere definita dal basso verso l'altro 
+            layers = 'B0' + ''.join(['T' if i in activelayers else 'F' for i  in reversed(layerlist) ])
+            #layers = 'B00000TTF' + ''.join(['T' if i = percorso_scelto else 'F' for i  in reversed(layerlist_giri) ])  + 'TTTTTT'
+
             #filtro percorso
-            query_filtro='''select id, 
+            #query_filtro='''select id, 
+            #    replace(replace(replace(st_extent(st_transform(geom,{0}))::text,'BOX(',''),')',''),' ',',')
+            #    from percorsi.mv_contatori_utenze mcu
+            #    where zona ='{1}' and giro='{2}'
+            #    group by id'''.format(epsg, col, giro)
+
+            #query estensione standart: bbocx comprendente tutti i percorsi
+            query_filtro='''select 
                 replace(replace(replace(st_extent(st_transform(geom,{0}))::text,'BOX(',''),')',''),' ',',')
-                from percorsi.mv_contatori_utenze mcu
-                where zona ='{1}' and giro='{2}'
-                group by id'''.format(epsg, col, giro)
+                from percorsi.mv_contatori_utenze mcu'''.format(epsg, col, giro)
 
             try:
                 conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
@@ -507,28 +549,33 @@ class Quizzer(telepot.aio.helper.CallbackQueryOriginHandler):
                 logging.error(e)
 
             #filtro mezzo 
-            query_filtro_mezzo ='''select id
-                from percorsi.v_last_position v
-                where name = {0}
-                group by id'''.format(mezzo)
+            query_filtro_mezzo =''' select id
+                from ws_way.v_last_position2 v
+                where name = '{0}'; '''.format(mezzo)
 
             try:
                 cur2 = conn.cursor()
-                cur2.execute(query_filtro_mezzo)
-                filtro_mezzo=cur2.fetchall()
+                cur2.execute(query_filtro_mezzo)                
             except Exception as e:
                 logging.error(e)
 
             
-            for f in filtro:
-                #url_gter ='''{}?repository={}&project={}&layers={}&bbox={}&crs={}&filter=mv_contatori_utenze:"id"+IN+(+{}+)'''.format(url_gishosting, repository, project,layers,f[1],crs,f[0])
-                params={ 'repository' : repository,
+            filtro_mezzo=cur2.fetchall()
+
+            if filtro_mezzo == []:
+                logging.error('Mezzo non trovato')
+                logging.exception('')
+            
+            
+            #Definisco URL
+            #url_gter ='''{}?repository={}&project={}&layers={}&bbox={}&crs={}&filter=mv_contatori_utenze:"id"+IN+(+{}+)'''.format(url_gishosting, repository, project,layers,f[1],crs,f[0])
+            params={ 'repository' : repository,
                 'project': project,
                 'layers': layers,
-                'bbox': f[1],
+                'bbox': filtro[0][0],
                 'crs':crs,
-                'filter': 'mv_contatori_utenze:"id"+IN+(+{}+)'.format(f[0])
-                #'filter': 'v_last_position:"id"+IN+(+{}+)'.format(f[0])
+                #'filter': 'mv_contatori_utenze:"id"+IN+(+{}+)'.format(f[0])
+                'filter': 'v_last_position2:"id"+IN+(+{}+)'.format(filtro_mezzo[0][0])
                 }
             
             url_gter2 = urllib.parse.urlencode(params)
