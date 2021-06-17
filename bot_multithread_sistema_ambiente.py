@@ -160,6 +160,7 @@ def lista_mezzi(codicegiro, str_targa=''): #targa completa o primi caratteri del
 
     query='''select name, fleetname from ws_way.v_last_position2
              where name ilike '%{}%'
+             and fleetname != 'autovetture'
              order by name limit 50;'''.format(str_targa.strip()) 
 
     try:
