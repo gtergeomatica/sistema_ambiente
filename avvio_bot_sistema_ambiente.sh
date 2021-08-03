@@ -27,7 +27,7 @@ sleep 20
 # RPM chkconfig avvio_bot.sh on
 
 
-python3 $CONF/forever2.py $CONF/bot_multithread_sistema_ambiente.py
+/usr/bin/python3.9 $CONF/forever2.py $CONF/bot_multithread_sistema_ambiente_v2.py
 
 echo "FINE SCRIPT AVVIO TELGRAM BOT DAEMON"
 
