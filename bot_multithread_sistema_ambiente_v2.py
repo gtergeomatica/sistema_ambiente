@@ -109,109 +109,6 @@ def layer_order(lizmap_cfg_path): #lizmap_config
     
     return layernames
 
-""" 
-def lista_percorsi(colore):
-    #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
-    # ora mi connetto al DB
-    conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
-    conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    query='''select g.giro, m.descrizione from percorsi.v_giri g 
-        left join deco.giri_mezzo m on m.id=g.mezzo  
-        where zona='{}' order by length(giro), giro;'''.format(colore)
-    try:
-        cur.execute(query)
-        stazioni=cur.fetchall()
-    except Exception as e:
-        logging.error(e)
-
-    logging.debug(query)
-    #logging.debug(stazioni)
-
-    #messaggio= "\033[1m"+'CONTROLLO OPERATIVITA\' STAZIONI GNSS\n\n'+"\033[0m"
-    messaggio= '{} Clicca sul bottone per visualizzare il giro su mappa'.format(emoji.emojize(" :backhand_index_pointing_down:)", use_aliases=True), emoji.emojize(" :world_map:)", use_aliases=True))
-    inline_array = []
-    for s in stazioni:
-        logging.debug(s)
-        testo_bottone='Giro {} - {}: {}\n'.format(s[0],emoji.emojize(" :truck:", use_aliases=True), s[1])   
-        logging.debug(testo_bottone)
-        cod='{}_{}'.format(colore,s[0])
-        inline_array.append(InlineKeyboardButton(text=testo_bottone, callback_data=cod))
-
-    logging.debug(inline_array)
-    keyboard_elements = [[element] for element in inline_array]
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_elements )
-    # vidlist = ""
-    # for row in mire:
-    #         vidlist = vidlist+"[InlineKeyboardButton(text='"+str(row[1])+"', callback_data='"+str(row[0])+"')],"
-    # vidlist = vidlist+"]"
-    # print(vidlist)
-    #keyboard = InlineKeyboardMarkup(inline_keyboard=[vidlist])
-    
-    conn.close()
-
-
-    #logging.info(messaggio)
-    logging.info(messaggio)
-    return messaggio, keyboard
-
-def lista_mezzi(codicegiro, str_targa=''): #targa completa o primi caratteri della targa 
-    #conn = psycopg2.connect(host=ip, dbname=db, user=user, password=pwd, port=port) 
-    # ora mi connetto al DB
-    conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
-    conn.set_session(autocommit=True)
-    cur = conn.cursor()
-    #query su t mezzi manca filtro su data
-    #query='''select name, fleetname from ws_way.t_mezzi  
-    #         where name ilike '%{}%'
-    #         and fleetname not in ('presse', 'cassoni', 'scarrabili', 'siam-wappy')
-    #         order by name limit 50;'''.format(str_targa.strip())
-
-    query='''select name, fleetname from ws_way.v_last_position2
-             where name ilike '%{}%'
-             and fleetname != 'autovetture'
-             order by name limit 50;'''.format(str_targa.strip()) 
-
-    try:
-        cur.execute(query)
-        stazioni=cur.fetchall()
-    except Exception as e:
-        logging.error(e)
-        
-
-    logging.debug(query)
-    
-
-    
-    messaggio= '{0} Clicca sul bottone per scegliere il mezzo {1}'.format(emoji.emojize(" :backhand_index_pointing_down: ", use_aliases=True), emoji.emojize(" :truck: ", use_aliases=True))
-    inline_array = []
-    for s in stazioni:
-        logging.debug(s)
-        testo_bottone='Mezzo {}, flotta  {}\n'.format(s[0], s[1])   
-        logging.debug(testo_bottone)
-        cod='_{}_{}'.format(codicegiro,s[0])
-        inline_array.append(InlineKeyboardButton(text=testo_bottone, callback_data=cod))
-
-    logging.debug(inline_array)
-    keyboard_elements = [[element] for element in inline_array]
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_elements )
-    # vidlist = ""
-    # for row in mire:
-    #         vidlist = vidlist+"[InlineKeyboardButton(text='"+str(row[1])+"', callback_data='"+str(row[0])+"')],"
-    # vidlist = vidlist+"]"
-    # print(vidlist)
-    #keyboard = InlineKeyboardMarkup(inline_keyboard=[vidlist])
-    
-    conn.close()
-    
-    if keyboard == []:
-        messaggio = '{} Nessun mezzo corrispondente alla targa fornita. Ritenta!'.format(emoji.emojize(" :no_entry_sign: ", use_aliases=True))
-
-    #logging.info(messaggio)
-    logging.info(messaggio)
-    return messaggio, keyboard """
 
 def keyboard (kb_config):
     _keyboard= types.InlineKeyboardMarkup ()
@@ -241,9 +138,11 @@ async def callback (callback_query: types.CallbackQuery):
 
 #**************************** inizio command '/servizio'
 class Form (StatesGroup):
-    
+
+    profilo_telegram = State()
     badge_operatore = State()             #codice badge operatore
     incarico = State()
+    redo = State()    
     #aggiungere qui altri states of the user per aggiungere funzionalità
 
 
@@ -269,7 +168,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler(lambda message: not message.text.isdigit() or len(message.text)!= 7,state=Form.badge_operatore)
 async def process_invalid_text(message: types.Message, state: FSMContext):
 
-    return await message.reply("Codice badge inserito con valido. Riprova {}".formt(emoji.emojize(":warning:",use_aliases=True)))
+    return await message.reply("Codice badge inserito con valido. Riprova {}".format(emoji.emojize(":warning:",use_aliases=True)))
 
 
 @dp.message_handler(lambda message: message.text.isdigit() and len(message.text) == 7, state=Form.badge_operatore)
@@ -282,14 +181,33 @@ async def process_text(message: types.Message, state: FSMContext):
 
         con = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
         #query_servizio = '''select * from schedulazione.servizio where TRIM("COD BADGE OPERATORE") ='{}' and "DATA SERVIZIO" >= now()::date'''.format(data['badge_operatore'])
-        query_servizio = '''select * from schedulazione.servizio where TRIM("COD BADGE OPERATORE") ='{}' 
-                            and "DATA SERVIZIO" >= '2021-07-16'::date 
-                            order by  "DATA SERVIZIO", "DA ORA A ORA"''' .format(data['badge_operatore'])
+        # query_servizio = '''select "DATA SERVIZIO",
+        #                           "DA ORA A ORA",
+        #                           "COD SERVIZIO",
+        #                           "DESCRIZIONE SERVIZIO",
+        #                           "COD ZONA",
+        #                           "DESCRIZIONE ZONA",
+        #                           "COD MEZZO",
+        #                           "MATRICOLA MEZZO",
+        #                           "COD BADGE OPERATORE",
+        #                           "COGNOME E NOME",
+        #                           "DATA MODIFICA",
+        #                           utente 
+        #                           from schedulazione.t_servizi 
+        #                           where TRIM("COD BADGE OPERATORE") ='{}' 
+        #                           and ("DATA SERVIZIO" = now()::date
+        #                           or "DATA SERVIZIO" = now()::date + interval '1' day)
+        #                           ''' .format(data['badge_operatore'])
+        query_servizio = '''select * from schedulazione.v_query_bot
+                             where TRIM(cod_badge_op) ='{}'
+                            and (data_servizio = now()::date
+                            or data_servizio = now()::date + interval '1' day) '''.format(data['badge_operatore'])
 
+                            
         check_servizio = esegui_query(con,query_servizio,'s')
 
         if check_servizio == 1:
-            await bot.send_message(message.chat.id,'''{} Si è verificato un problema, e non è possibile verificare quali incarichi ti sono assegnati:
+            await bot.send_message(message.chat.id,'''{} Si è verificato un problema, e non è possibile verificare quali servizi ti sono assegnati:
                         \nSe visualizzi questo messaggio prova a contattare un tecnico'''.format(emoji.emojize(":warning:",use_aliases=True)))
             
             await state.finish()
@@ -302,7 +220,13 @@ async def process_text(message: types.Message, state: FSMContext):
         else:
             #await bot.send_message(message.chat.id,'''{}  Visualizzazione incarichi'''.format(emoji.emojize(":thumbs_up:",use_aliases=True)))
             
-            nome_operatore = check_servizio[0][9].strip().title()
+            nome_operatore = check_servizio[0][13]
+            if type(nome_operatore) != 'str':
+                nome_operatore= ''
+            else:
+                nome_operatore = nome_operatore.strip().title()
+           
+                      
             """ 
             reply_list = [['row_{0}_{1}'.format(i[0], i[1]),  #sostituire con identificativo riga appena disponibile
                             '{} {} {} {} '.format(emoji.emojize(":date:",use_aliases=True),
@@ -326,28 +250,32 @@ async def process_text(message: types.Message, state: FSMContext):
 
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
             incarichi = {}
+            markup_list=[]
             c = 0
             for i in check_servizio:
                 c+=1
-                text_incarico = '{} - {} {} \n{} {} '.format(c,
+                text_incarico = '{} - {} {} {} {} \n{} {} '.format(c,
                                                               emoji.emojize(":date:",use_aliases=True),
-                                                              i[0], #data
+                                                              i[1], 
                                                               emoji.emojize(":clock830:",use_aliases=True),
-                                                              i[1])
+                                                              i[2], 
+                                                              emoji.emojize(":truck:", use_aliases=True),
+                                                              i[9])
                 markup.add(text_incarico)
-                
+                markup_list.append(text_incarico)
                 incarichi[str(c)]=i  
 
             await Form.incarico.set()
             #async with state.proxy() as data:
             data['incarichi']= incarichi
             data['user']= nome_operatore
+            data['markup_list'] = markup_list
 
 
             await bot.send_message(
                 chat_id=message.from_user.id,
-                text='''{} Ciao {}, ecco gli incarichi che ti sono assegnati
-                \n{} Scegli un incarico per maggiori dettagli'''.format(emoji.emojize(":white_check_mark:",use_aliases=True),
+                text='''{} Ciao {}, ecco i servizi che ti sono assegnati
+                \n{} Scegli un servizio per maggiori dettagli'''.format(emoji.emojize(":white_check_mark:",use_aliases=True),
                                                                         nome_operatore,
                                                                         emoji.emojize(":point_down:",use_aliases=True)),
                 reply_markup= markup)
@@ -362,21 +290,40 @@ async def process_incarico(message: types.Message, state: FSMContext):
 
         #if message.text not in data['incarichi'].keys():
         if message.text[0] not in data['incarichi'].keys(): #[i[0] for i in data['incarichi'].keys()]:
-            await message.reply('Il testo inserito non è valido. Seleziona un incarico usando le opzioni presenti sulla tastiera.')
+            await message.reply('Il testo inserito non è valido. Seleziona un servizio usando le opzioni presenti sulla tastiera.')
         else:
             data['incarico'] = message.text
-            markup_old = types.ReplyKeyboardRemove()
-            #await bot.send_message(message.chat.id,'Hai selezionato {}'.format(data['incarico']), reply_markup=markup_old)
+            
+            
 
-            info_incarico = data['incarichi'][data['incarico'][0]]
+            info_incarico = list(data['incarichi'][data['incarico'][0]])
+            info_incarico = [ '' if i == None else i for i in info_incarico   ]
+            info_incarico = [ i.strip() if type(i) == 'str' else i for i in info_incarico   ]
+            
+
+
 
             # Preparo reindirizzamento alla mappa GISHOSTING
-            #par_giro=query_data[1:].split('_')
-            #col=par_giro[0]
-            #giro=par_giro[1]
-            mezzo=info_incarico[7].strip()
-            giro = ''
-            col = ''
+             
+            s_id = info_incarico[0]
+            s_data_servizio = info_incarico[1]
+            s_ore_servizio= info_incarico[2]
+            s_ora_inizio= info_incarico[3]
+            s_ora_fine = info_incarico[4]
+            s_cod_servizio = info_incarico[5]
+            s_desc_servizio = info_incarico[6]
+            s_cod_zona = info_incarico[7]
+            s_desc_zona = info_incarico[8]
+            s_cod_mezzo = info_incarico[9]
+            s_matricola_mezzo = info_incarico[10]
+            s_id_mezzo_query = info_incarico[11]
+            s_cod_badge_op = info_incarico[12]
+            s_nome_op = info_incarico[13]
+            s_data_mod = info_incarico[14]
+            s_utente_mod = info_incarico[15]
+            s_cod_uni = info_incarico[16]
+            s_giro = info_incarico[17] #numero giro
+            s_zona= info_incarico[18] #colore (RBG)
 
 
 
@@ -386,7 +333,6 @@ async def process_incarico(message: types.Message, state: FSMContext):
             project='percorsi_progetto_pubblico'
             epsg=3857
             crs='EPSG:{}'.format(epsg)
-            #bbox=
             
 
             
@@ -402,11 +348,17 @@ async def process_incarico(message: types.Message, state: FSMContext):
             #verifico i layer pubblicatisul web 
             layerlist = layer_order(p.lizmap_config)
             layerlist_giri = [i for i in layerlist if i.startswith('v_giri')]
-            activelayers = ['v_last_position2', 'limiti_amministrativi', 'frazioni',  'giri']
+            activelayers = ['limiti_amministrativi', 'frazioni',  'giri']
+
+            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '':
+                #aggiungo alla lista dei layer da rendere visibili 
+                # il layer contente le posizioni dei mezzi per i soli utenti abilitati 
+                # e solo se il mezzo è disponibile
+                activelayers.append('v_last_position2')
             
-            if col != '':
-                #aggiungo il percorso scelto alla listadei layer da rendere visibili
-                percorso_scelto = 'v_giro_{}_{}'.format(col.lower(), giro.lower().replace(' ', ''))
+            if s_zona != '' and s_giro != '':
+                #aggiungo il percorso scelto alla lista dei layer da rendere visibili
+                percorso_scelto = 'v_giro_{}_{}'.format(s_zona.lower(), s_giro.lower().replace(' ', ''))
                 activelayers.append(percorso_scelto)
             else:
                 activelayers = activelayers + layerlist_giri
@@ -427,7 +379,7 @@ async def process_incarico(message: types.Message, state: FSMContext):
             #query estensione standart: bbocx comprendente tutti i percorsi
             query_filtro='''select 
                 replace(replace(replace(st_extent(st_transform(geom,{0}))::text,'BOX(',''),')',''),' ',',')
-                from percorsi.mv_contatori_utenze mcu'''.format(epsg, col, giro)
+                from percorsi.mv_contatori_utenze mcu'''.format(epsg, s_zona, s_giro)
 
             try:
                 conn = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)
@@ -437,20 +389,6 @@ async def process_incarico(message: types.Message, state: FSMContext):
                 filtro=cur.fetchall()
             except Exception as e:
                 logging.error(e)
-
-            #filtro mezzo 
-            query_filtro_mezzo =''' select id
-                from ws_way.v_last_position2 v
-                where name = '{0}'; '''.format(mezzo.lower().strip())
-
-            try:
-                cur2 = conn.cursor()
-                cur2.execute(query_filtro_mezzo)                
-            except Exception as e:
-                logging.error(e)
-
-            
-            filtro_mezzo=cur2.fetchall()
 
             
             
@@ -464,55 +402,106 @@ async def process_incarico(message: types.Message, state: FSMContext):
                 #'filter': 'mv_contatori_utenze:"id"+IN+(+{}+)'.format(f[0])
                 #'filter': 'v_last_position2:"id"+IN+(+{}+)'.format(filtro_mezzo[0][0])
                 }
-            
-            if filtro_mezzo == []:
-                logging.warning('Mezzo non trovato')
-                mezzo = ''
-            else:
-                params['filter']= 'v_last_position2:"id"+IN+(+{}+)'.format(filtro_mezzo[0][0])
+            #aggiungo filtro sul mezzo     
+            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '':
+                params['filter']= 'v_last_position2:"id"+IN+(+{}+)'.format(s_id_mezzo_query)
 
             url_gter2 = urlencode(params)
             url_gter = '{}?{}'.format(url_gishosting, url_gter2)
             logging.debug(url_gter) 
             
-            
-            if giro == '' and mezzo!= '':
-                info_mappa ='''Per questo incarico non è disponibile il percorso. 
+
+            if s_giro == '' and s_id_mezzo_query!= '':
+                if data['profilo_telegram'] in ['T', 'O']:
+                    info_mappa ='''Per questo servizio non è disponibile il percorso. 
                                \nPuoi comunque consultare la mappa per visualizzare la posizione del mezzo \n\n{0}'''.format(url_gter)
-            elif giro != '' and  mezzo == '':
-                info_mappa ='''Per questo incarico non è disponibile il tracciamento del mezzo 
+                else:
+                    info_mappa = '''Mappa non disponibile. Per questo servizio il tracciamento del mezzo è attivo ma il tuo profilo utente non è abilitato a visualizzarlo. Percorso non disponibile. '''
+            elif s_giro != '' and  s_id_mezzo_query == '':
+                if data['profilo_telegram'] in ['T', 'O']:
+                    info_mappa ='''Per questo servizio non è disponibile il tracciamento del mezzo 
                               \nPuoi comunque consultare la mappa per visualizzare il percorso \n\n{0}'''.format(url_gter)
-            elif giro == '' and  mezzo == '':                  
-                info_mappa ='''Per questo incarico la mappa non è disponibile'''
+                else:
+                    info_mappa = '''Per questo servizio non è disponibile il tracciamento del mezzo e il tuo profilo utente non è abilitato a visualizzarlo
+                              \nPuoi comunque consultare la mappa per visualizzare il percorso \n\n{0}'''.format(url_gter)
+                
+            elif s_giro == '' and  s_id_mezzo_query == '':                  
+                info_mappa ='''Per questo servizio la mappa non è disponibile'''
             else:
-                info_mappa ='Visualizza il percorso e la posizione del mezzo sulla mappa  \n\n{0}'.format(url_gter)
+                if data['profilo_telegram'] in ['T', 'O']:
+                    info_mappa ='Visualizza il percorso e la posizione del mezzo sulla mappa  \n\n{0}'.format(url_gter)
+                else:
+                    info_mappa ='Per questo servizio il tracciamento del mezzo è attivo ma il tuo profilo utente non è abilitato a visualizzare la posizione del mezzo. Puoi comunque consultare la mappa per visualizzare il percorso  \n\n{0}'.format(url_gter)
             
 
-            to_send = '''Ecco i dettagli dell'incarico selezionato: \n\n{} \n{} {} \n{} {} \n{} {} \n{} {}'''.format(data['incarico'][3:].strip(), #data e ora
-                                         emoji.emojize(":recycling_symbol:" , use_aliases=True), info_incarico[3].strip(),   #"DESCRIZIONE SERVIZIO"
-                                         emoji.emojize(":truck:", use_aliases=True), info_incarico[7].strip(),                #mezzo
-                                         emoji.emojize(":arrow_lower_right:", use_aliases=True), info_incarico[5].strip(),                     #"DESCRIZIONE ZONA"
-                                         emoji.emojize(":world_map:", use_aliases=True), info_mappa
-                                         )
-            
+            to_send = '''Ecco i dettagli del servizio selezionato: \n\n{}{} \n{} {} \n{} {} \n{} {} \n{} {} \n{} {}'''.format(emoji.emojize(":date:",use_aliases=True), s_data_servizio,
+                                                            emoji.emojize(":clock830:",use_aliases=True), s_ore_servizio,
+                                                            emoji.emojize(":truck:", use_aliases=True), s_matricola_mezzo,
+                                                            emoji.emojize(":recycling_symbol:" , use_aliases=True), s_desc_servizio,
+                                                            emoji.emojize(":arrow_lower_right:", use_aliases=True), s_desc_zona,
+                                                            emoji.emojize(":world_map:", use_aliases=True), info_mappa
+                                                            )
+                                
             #link_mappa=short_url.encode_url(link_mappa)
             #kml=short_url.encode_url(kml)
             #sent = "Clicca sul link {0} per visualizzare il giro su google maps.\n Visualizza il KML {1} o scaricalo {2} ".format(link_gmaps, link_mappa, kml)
             
+            markup_to_close = types.ReplyKeyboardRemove()
+            await bot.send_message(message.chat.id,to_send, reply_markup=markup_to_close)
 
-            await bot.send_message(message.chat.id,to_send, reply_markup=markup_old)
-            await state.finish()
+            await Form.redo.set()
+            markup_again = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+            markup_again.add("si", "no")
 
+            await bot.send_message(message.chat.id,'Vuoi visualizzare i dettagli di un altro servizio? ', reply_markup=markup_again)
+
+            
+
+
+@dp.message_handler(state=Form.redo)
+async def process_other(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        logging.debug('*************** DATA KEYS {}'.format(data.keys()))
+        logging.debug('***************  opzione selezionata {}'.format(message.text))
+        #logging.debug('*************** INCARIZHI SELEZIONABILI {}'.format( [i[0] for i in data['incarichi'].keys()])) #data['incarichi'].keys()))
+       
+        
+        #if message.text not in data['incarichi'].keys():
+        if message.text not in ['si', 'no']:
+            await message.reply('Il testo inserito non è valido. Seleziona una delle opzioni presenti sulla tastiera.')
+        else:
+            markup_to_close = types.ReplyKeyboardRemove()
+            data['redo'] = message.text
+
+            if data['redo'] == 'si':
+                await Form.incarico.set()
+
+                markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+                for row in data['markup_list']:
+                    markup.add(row)
+
+                await bot.send_message(
+                chat_id=message.from_user.id,
+                text=''' {} Scegli un servizio per maggiori dettagli {}'''.format(emoji.emojize(":white_check_mark:",use_aliases=True),
+                                                                         emoji.emojize(":point_down:",use_aliases=True)),
+                reply_markup= markup)
+
+            else:
+                await bot.send_message(
+                chat_id=message.from_user.id,
+                text='''Grazie per aver utilizzato il Bot SIU Sistema Ambiente. A presto! {}'''.format( emoji.emojize(":wave:",use_aliases=True)),
+                reply_markup= markup_to_close)
+                await state.finish()
 
 
 
 #Command hendler for command '/servizio'
 @dp.message_handler(commands='servizio')
-async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message, state: FSMContext):
 
     #check id telegram
     con = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)   
-    query_telegram_id= "select * from schedulazione.t_telegramid where telegramid ='{}'".format(message.chat.id)
+    query_telegram_id= "select d_profilo  from schedulazione.t_telegramid where telegramid ='{}'".format(message.chat.id)
     
     check_telegram = esegui_query(con,query_telegram_id,'s')
 
@@ -523,12 +512,16 @@ async def cmd_start(message: types.Message):
 
     elif len(check_telegram) == 0:
         await bot.send_message(message.chat.id,'''{} Il telegram_id associato al dispositivo non è registrato nel sistema e pertanto non puoi usare questo comando.
-                        \nContatta un amministratore di sistema per abilitare il dispositivo, e dopo esser stato abilitato ripeti questo comando.'''.format(emoji.emojize(":no_entry_sign:",use_aliases=True)))
+                        \nUtilizza il comado /telegram_id per maggiori informazioni.'''.format(emoji.emojize(":no_entry_sign:",use_aliases=True)))
     
     else:
+
+        async with state.proxy() as data:
+            data['profilo_telegram'] = check_telegram[0][0] #'T', 'A', 'O'
+
         # Set state
-        await Form.badge_operatore.set()    
-        await message.reply("Ciao, inserisci il codice del badge per visualizzare gli incarichi assegnati")            
+        await Form.badge_operatore.set()          
+        await message.reply("Ciao, inserisci il codice del badge per visualizzare i servizi assegnati")            
 
 
 
@@ -542,7 +535,7 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/start` command
     """
-    await bot.send_message(message.chat.id,"Benvenuto/a {}!\nQuesto BOT è stato realizzato per il personale interno di Sistema Ambiente SPA (Lucca)\nScopri cosa può fare questo BOT andando sul comando /help".format(message.from_user.first_name))
+    await bot.send_message(message.chat.id,"Benvenuto/a!\nQuesto BOT è stato realizzato per il personale interno di Sistema Ambiente SPA (Lucca)\nScopri cosa può fare questo BOT andando sul comando /help")
 
 @dp.message_handler(commands='help')
 async def send_help(message: types.Message):
@@ -553,8 +546,8 @@ async def send_help(message: types.Message):
     \n{0} start: Avvia il bot per la prima volta
     \n{0} help: Scopri le funzionalità del BOT
     \n{0} telegram_id: Ottieni il codice telegram da comuicare per abilitare il bot sul dispositivo
-    \n{0} servizio: Visualizza gli incarichi assegnati
-    \n\nPuoi accedere a questi comandi cliccando sul Menu in basso a sinistra o digitando il comando desiderato preceduto dal carattere '/'  (es. /start). """.format(emoji.emojize(":arrow_forward:",use_aliases=True)))
+    \n{0} servizio: Visualizza i servizi assegnati
+    \n\nPuoi accedere a questi comandi cliccando sul Menu in basso a sinistra o digitando il comando desiderato preceduto dal carattere '/'  (es. /telegram_id). """.format(emoji.emojize(":arrow_forward:",use_aliases=True)))
     ##\n\nTramite questo BOT potrai anche ricevere notifiche dal sistema. Per fare questo devi inserire il tuo telegram_id nel portale e attivare le notifiche.
     #\n{0} webgis: restituisce il link al webgis
 
@@ -564,15 +557,15 @@ async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/telegram_id` command
     """
-    await message.reply("Ciao {}, il codice (telegram id) da comunicare per far abilitare questo device a interagire con questo BOT è {}".format(message.from_user.first_name,message.chat.id))
+    await message.reply("Ecco il tuo telegram id: {}. \nComunica questo codice ad un amministratore di sistema per poter interagire con il Bot SIU Sistema Ambiente da questo dispositivo.".format(message.chat.id))
 
 # comando per webgis
-@dp.message_handler(commands=['webgis'])
+@dp.message_handler(commands=['webgiss'])
 async def send_welcome(message: types.Message):
     """
     This handler will be called when user sends `/webgis` command
     """
-    await message.reply("Ciao {}, il link al webGIS di Sistema Ambiente è {}, {}".format(message.from_user.first_name, link, note_link))
+    await message.reply("Ciao, il link al WebGIS di Sistema Ambiente è {}, {}".format(link, note_link))
 
 
 
