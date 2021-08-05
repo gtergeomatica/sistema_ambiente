@@ -140,7 +140,7 @@ async def callback (callback_query: types.CallbackQuery):
 class Form (StatesGroup):
 
     profilo_telegram = State()
-    badge_operatore = State()             #codice badge operatore
+    badge_operatore = State()     
     incarico = State()
     redo = State()    
     #aggiungere qui altri states of the user per aggiungere funzionalità
@@ -201,7 +201,8 @@ async def process_text(message: types.Message, state: FSMContext):
         query_servizio = '''select * from schedulazione.v_query_bot
                              where TRIM(cod_badge_op) ='{}'
                             and (data_servizio = now()::date
-                            or data_servizio = now()::date + interval '1' day) '''.format(data['badge_operatore'])
+                            or data_servizio = now()::date + interval '1' day) 
+                            order by data_servizio, ore_servizio'''.format(data['badge_operatore'])
 
                             
         check_servizio = esegui_query(con,query_servizio,'s')
@@ -221,7 +222,7 @@ async def process_text(message: types.Message, state: FSMContext):
             #await bot.send_message(message.chat.id,'''{}  Visualizzazione incarichi'''.format(emoji.emojize(":thumbs_up:",use_aliases=True)))
             
             nome_operatore = check_servizio[0][13]
-            if type(nome_operatore) != 'str':
+            if nome_operatore == None:
                 nome_operatore= ''
             else:
                 nome_operatore = nome_operatore.strip().title()
@@ -466,14 +467,16 @@ async def process_other(message: types.Message, state: FSMContext):
         #logging.debug('*************** INCARIZHI SELEZIONABILI {}'.format( [i[0] for i in data['incarichi'].keys()])) #data['incarichi'].keys()))
        
         
-        #if message.text not in data['incarichi'].keys():
-        if message.text not in ['si', 'no']:
-            await message.reply('Il testo inserito non è valido. Seleziona una delle opzioni presenti sulla tastiera.')
+        message_parsed = message.text.lower().strip()
+        if message_parsed not in ['si', 's', 'yes', 'y', 'no', 'n']:
+            await message.reply('''Il testo inserito non è valido. Seleziona una delle opzioni presenti sulla tastiera o scrivi 
+                                   \n'si' per vedere un altro servizio
+                                   \n'no' per chiudere la comunicazione''')
         else:
             markup_to_close = types.ReplyKeyboardRemove()
-            data['redo'] = message.text
+            data['redo'] = message_parsed
 
-            if data['redo'] == 'si':
+            if data['redo'] in ['si', 's', 'yes', 'y']:
                 await Form.incarico.set()
 
                 markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
