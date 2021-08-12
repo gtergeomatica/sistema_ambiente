@@ -158,7 +158,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     if current_state is None:
         return
 
-    logging.info('Cancelling state %r', current_state)
+    logging.debug('Cancelling state %r', current_state)
     # Cancel state and inform user about it
     await state.finish()
     # And remove keyboard (just in case)
@@ -261,7 +261,7 @@ async def process_text(message: types.Message, state: FSMContext):
                                                               emoji.emojize(":clock830:",use_aliases=True),
                                                               i[2], 
                                                               emoji.emojize(":truck:", use_aliases=True),
-                                                              i[9])
+                                                              i[9] or 'Non definito')
                 markup.add(text_incarico)
                 markup_list.append(text_incarico)
                 incarichi[str(c)]=i  
@@ -285,8 +285,8 @@ async def process_text(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Form.incarico)
 async def process_incarico(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        logging.debug('*************** DATA KEYS {}'.format(data.keys()))
-        logging.debug('*************** INCARICO SELEZIONATO {}'.format(message.text[0]))
+        #logging.debug('*************** DATA KEYS {}'.format(data.keys()))
+        #logging.debug('*************** INCARICO SELEZIONATO {}'.format(message.text[0]))
         #logging.debug('*************** INCARIZHI SELEZIONABILI {}'.format( [i[0] for i in data['incarichi'].keys()])) #data['incarichi'].keys()))
 
         #if message.text not in data['incarichi'].keys():
@@ -349,12 +349,15 @@ async def process_incarico(message: types.Message, state: FSMContext):
             #verifico i layer pubblicatisul web 
             layerlist = layer_order(p.lizmap_config)
             layerlist_giri = [i for i in layerlist if i.startswith('v_giri')]
-            activelayers = ['limiti_amministrativi', 'frazioni',  'giri']
+            activelayers = ['limiti_amministrativi', 'frazioni'] #,  'giri'] 
+            #giri è un gruppo - abilito la funzione hide checkbox for group
 
-            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '':
+            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '' and s_id_mezzo_query != None :
+                #aggiungo alla lista dei layer da rendere :
                 #aggiungo alla lista dei layer da rendere visibili 
                 # il layer contente le posizioni dei mezzi per i soli utenti abilitati 
                 # e solo se il mezzo è disponibile
+                #logging.debug('********************** Aggiungo layer mezzi :{}'.format(s_id_mezzo_query))
                 activelayers.append('v_last_position2')
             
             if s_zona != '' and s_giro != '':
@@ -368,8 +371,11 @@ async def process_incarico(message: types.Message, state: FSMContext):
             #costrusico la stringa per l'indirizzo inserendo una 'T' per ogni layer attivo
             # NB ordine inverso : la lista dei layer deve essere definita dal basso verso l'altro 
             layers = 'B0' + ''.join(['T' if i in activelayers else 'F' for i  in reversed(layerlist) ])
+            if 'v_last_position2' in activelayers:
+                # in caso questo layer si attivo richiede 2 T invece che 1 per essere visualizzato
+                layers = layers[:-2] + 'TT' 
             #layers = 'B00000TTF' + ''.join(['T' if i = percorso_scelto else 'F' for i  in reversed(layerlist_giri) ])  + 'TTTTTT'
-
+            #logging.debug('ACTIVELAYERS '+ '{}, '.join(activelayers))
             #filtro percorso
             #query_filtro='''select id, 
             #    replace(replace(replace(st_extent(st_transform(geom,{0}))::text,'BOX(',''),')',''),' ',',')
@@ -404,12 +410,12 @@ async def process_incarico(message: types.Message, state: FSMContext):
                 #'filter': 'v_last_position2:"id"+IN+(+{}+)'.format(filtro_mezzo[0][0])
                 }
             #aggiungo filtro sul mezzo     
-            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '':
+            if data['profilo_telegram'] in ['T', 'O'] and s_id_mezzo_query != '' and s_id_mezzo_query != None :
                 params['filter']= 'v_last_position2:"id"+IN+(+{}+)'.format(s_id_mezzo_query)
 
             url_gter2 = urlencode(params)
             url_gter = '{}?{}'.format(url_gishosting, url_gter2)
-            logging.debug(url_gter) 
+            #logging.debug(url_gter) 
             
 
             if s_giro == '' and s_id_mezzo_query!= '':
@@ -462,8 +468,8 @@ async def process_incarico(message: types.Message, state: FSMContext):
 @dp.message_handler(state=Form.redo)
 async def process_other(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        logging.debug('*************** DATA KEYS {}'.format(data.keys()))
-        logging.debug('***************  opzione selezionata {}'.format(message.text))
+        #logging.debug('*************** DATA KEYS {}'.format(data.keys()))
+        #logging.debug('***************  opzione selezionata {}'.format(message.text))
         #logging.debug('*************** INCARIZHI SELEZIONABILI {}'.format( [i[0] for i in data['incarichi'].keys()])) #data['incarichi'].keys()))
        
         
