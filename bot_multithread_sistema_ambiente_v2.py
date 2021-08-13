@@ -148,8 +148,8 @@ class Form (StatesGroup):
 
 
 
-@dp.message_handler(state='*', commands='cancel')
-@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+@dp.message_handler(state='*', commands='reset')
+@dp.message_handler(Text(equals='reset', ignore_case=True), state='*')
 async def cancel_handler(message: types.Message, state: FSMContext):
     """
     Allow user to cancel any action
@@ -158,11 +158,11 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     if current_state is None:
         return
 
-    logging.debug('Cancelling state %r', current_state)
+    #logging.debug('Cancelling state %r', current_state)
     # Cancel state and inform user about it
     await state.finish()
     # And remove keyboard (just in case)
-    await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
+    await message.reply('Reset effettuato! Seleziona un comando per rincominciare ad usare il Bot', reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(lambda message: not message.text.isdigit() or len(message.text)!= 7,state=Form.badge_operatore)
