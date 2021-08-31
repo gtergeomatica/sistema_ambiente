@@ -325,6 +325,7 @@ async def process_incarico(message: types.Message, state: FSMContext):
             s_cod_uni = info_incarico[16]
             s_giro = info_incarico[17] #numero giro
             s_zona= info_incarico[18] #colore (RBG)
+            s_note = info_incarico[19]
 
 
 
@@ -441,11 +442,12 @@ async def process_incarico(message: types.Message, state: FSMContext):
                     info_mappa ='Per questo servizio il tracciamento del mezzo è attivo ma il tuo profilo utente non è abilitato a visualizzare la posizione del mezzo. Puoi comunque consultare la mappa per visualizzare il percorso  \n\n{0}'.format(url_gter)
             
 
-            to_send = '''Ecco i dettagli del servizio selezionato: \n\n{}{} \n{} {} \n{} {} \n{} {} \n{} {} \n{} {}'''.format(emoji.emojize(":date:",use_aliases=True), s_data_servizio,
+            to_send = '''Ecco i dettagli del servizio selezionato: \n\n{}{} \n{} {} \n{} {} \n{} {} \n{} {} \n{} {} \n{} {}'''.format(emoji.emojize(":date:",use_aliases=True), s_data_servizio,
                                                             emoji.emojize(":clock830:",use_aliases=True), s_ore_servizio,
                                                             emoji.emojize(":truck:", use_aliases=True), s_matricola_mezzo,
                                                             emoji.emojize(":recycling_symbol:" , use_aliases=True), s_desc_servizio,
                                                             emoji.emojize(":arrow_lower_right:", use_aliases=True), s_desc_zona,
+                                                            emoji.emojize(":information:", use_aliases=True), s_note or '',
                                                             emoji.emojize(":world_map:", use_aliases=True), info_mappa
                                                             )
                                 
