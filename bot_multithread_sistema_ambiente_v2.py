@@ -199,9 +199,7 @@ async def process_text(message: types.Message, state: FSMContext):
         #                           or "DATA SERVIZIO" = now()::date + interval '1' day)
         #                           ''' .format(data['badge_operatore'])
         query_servizio = '''select * from schedulazione.v_query_bot
-                             where TRIM(cod_badge_op) ='{}'
-                            and (data_servizio = now()::date
-                            or data_servizio = now()::date + interval '1' day) 
+                             where TRIM(cod_badge_op) ='{}' 
                             order by data_servizio, ore_servizio'''.format(data['badge_operatore'])
 
                             
