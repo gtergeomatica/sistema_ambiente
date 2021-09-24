@@ -4,7 +4,7 @@ Script python per Sistema Ambiente
 
 Update giornaliero vista materializzata
 ------------------------------------------------------------------
-- update_vm.py: script per l'update giornaliero della vista materializzata
+- update_vm.py: script per l'update giornaliero della vista materializzata 
 
 
 Elaborazione dei dati OSM per il calcolo  dei percorsi con pg routing
@@ -15,7 +15,7 @@ Elaborazione dei dati OSM per il calcolo  dei percorsi con pg routing
 
 Bot telegram
 ------------------------------------------------------------------
-Il bot è stato creato con BotFather (inizialmente da Roberto Marzocchi, ma la proprietà pèuò essere cambiata)
+Il bot è stato creato con BotFather
 
 
 ![bot_father](https://user-images.githubusercontent.com/4061154/115054392-7522a600-9ee0-11eb-8866-4db76c5ea96d.PNG)
@@ -26,18 +26,22 @@ Il bot è stato creato con BotFather (inizialmente da Roberto Marzocchi, ma la p
 
 
 
-Nome bot: @sistema_ambiente_percorsi
+Nome bot: @sistema_ambiente_percorsi 
+Alias: SIU Sistema Ambiente
+ 
 
 
 
-servono le librerie telepot e emoji che si possono installare con pip3
-
+In una prima versione del bot ( gestita dal comano **bot_multithread_sistema_ambiente.py**) servivano le librerie telepot e emoji (installabili con pip3)
 (telepot non supporta gli ultimi sviluppi per cui meglio usare il seguente fork)
 
 e.g.
 ```
 sudo pip3 install git+https://github.com/MoumenKhadr/telepot.git --upgrade
 ```
+
+Nella versione attualmente supportata del bot (**bot_multithread_sistema_ambiente_v2.py**) la libreria telepot è stata sostituita con la libreria aiogram (https://github.com/aiogram/aiogram) e ciene lanciata con python 3.9.
+
 
 Il bot telegram è sempre in ascolto. 
 Parte all'avvio del server grazie allo script sh avvio_bot.sh che va personalizzato e che va messo in `/etc/init.d/`
@@ -94,22 +98,28 @@ G_API_KEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
 sono stati impostati i seguenti comandi da Bot Father:
 
-lista_percorsi_gialla - per visualizzare i percorsi della zona gialla
-lista_percorsi_blu - per visualizzare i percorsi della zona gialla
-lista_percorsi_rossa - per visualizzare i percorsi della zona gialla
-webgis - link al webGIS ad accesso profilato di sistema Ambiente 
-help - Aiuto
+start - Avvia il Bot per la prima volta
+help -  Scopri le funzionalità del Bot
+telegram_id - Ottieni il codice da comunicare per abilitare il bot su questo dispositivo
+servizio - Visualizza gli incarichi assegnati
+assistenti - Visualizza il nome degli assistenti in turno
+reset - Termina un precedente comando
 
 la seguente descrizione: 
 
 
-Si tratta di un bot telegram ad uso interno del personale di Sistema Ambiente per visualizzare i percorsi su mappa. Il bot si appoggia al servizio in cloud https://www-gishosting.gter.it. 
+Bot telegram ad uso interno del personale di Sistema Ambiente  Spa (Lucca)  configurato per inviare indicazioni sui servizi assegnati e per visualizzare i percorsi su mappa. Il bot si appoggia al servizio in cloud https://www-gishosting.gter.it. 
+I contenuti sono accessibili ai soli utenti abilitati. 
 
-Per maggiori informazioni sui percorsi è possibile scrivere a g.cascini@sistemaambientelucca.it, sul bot telegram a info@gter.it
 
-Invia un testo qualunque (es. xx) per procedere e segui le istruzioni. 
+Per maggiori informazioni su abilitazione, percorsi e servizi assegnati scrivere a g.cascini@sistemaambientelucca.it, sul bot telegram a info@gter.it
 
-e la seguente icona: 
+il seguente 'about':
+
+Bot telegram ad uso del personale interno di Sistema Ambiente Spa (Lucca)
+
+
+e la seguente icona: --DA MODIFICARE
 
 
 ![percorsi_v qgs](https://user-images.githubusercontent.com/4061154/115054574-a8653500-9ee0-11eb-95fc-6764019254dd.png  {width=150px height=150px})
@@ -121,6 +131,3 @@ Ecco l'anteprima del bot
 ![image](https://user-images.githubusercontent.com/4061154/115054627-bc109b80-9ee0-11eb-9caf-c1ca2f5b01b7.png)
 
 
-così come tre tasti analoghi qualora non si usi un comando riconosciuto dal bot
-
-Il bot è gestito dal comando **bot_multithread.py**

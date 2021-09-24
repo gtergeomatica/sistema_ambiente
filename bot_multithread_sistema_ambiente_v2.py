@@ -533,7 +533,75 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await message.reply("Ciao, inserisci il codice del badge per visualizzare i servizi assegnati")            
 
 
+#*************************************** Assistenti in turno
 
+class FormAssistenti (StatesGroup):
+
+    profilo_telegram = State()
+    assist = State()  
+
+#Command hendler for command '/servizio'
+@dp.message_handler(commands='assistenti')
+async def cmd_start(message: types.Message, state: FSMContext):
+
+    #check id telegram
+    con = psycopg2.connect(host=p.host, dbname=p.db, user=p.user, password=p.pwd, port=p.port)   
+    query_telegram_id= "select d_profilo  from schedulazione.t_telegramid where telegramid ='{}'".format(message.chat.id)
+    
+    check_telegram = esegui_query(con,query_telegram_id,'s')
+
+    if check_telegram ==1:
+        await bot.send_message(message.chat.id,'''{} Si è verificato un problema, e non è possibile capire se il tuo dispositivo è abilitato per interagire con il BOT di Sitema Ambiente.
+                        \nSe visualizzi questo messaggio prova a contattare un tecnico'''.format(emoji.emojize(":warning:",use_aliases=True)))
+
+
+    elif len(check_telegram) == 0:
+        await bot.send_message(message.chat.id,'''{} Il telegram_id associato al dispositivo non è registrato nel sistema e pertanto non puoi usare questo comando.
+                        \nUtilizza il comado /telegram_id per maggiori informazioni.'''.format(emoji.emojize(":no_entry_sign:",use_aliases=True)))
+    
+    else:
+
+        async with state.proxy() as data:
+            data['profilo_telegram'] = check_telegram[0][0] #'T', 'A', 'O'
+
+       
+
+        # Set state
+        #await FormAssistenti.badge_operatore.set()          
+        #await message.reply("Ciao, inserisci il codice del badge per visualizzare i servizi assegnati")  
+
+        query_assistenti = '''select nome_op from schedulazione.v_assistenti '''
+
+                            
+        check_assistenti = esegui_query(con, query_assistenti,'s')
+
+        if check_assistenti == 1:
+            await bot.send_message(message.chat.id,'''{} Si è verificato un problema, e non è possibile verificare gli assistenti in turno:
+                        \nSe visualizzi questo messaggio prova a contattare un tecnico'''.format(emoji.emojize(":warning:",use_aliases=True)))
+            
+            await state.finish()
+
+        elif len(check_assistenti) == 0:
+            await bot.send_message(message.chat.id,'''{} Al momento non risultano assistenti in servizio. Riprova più tardi.
+                                                        \nContatta un amministratore di sistema per maggiori informazioni '''.format(emoji.emojize(":no_entry_sign:",use_aliases=True)))
+            await state.finish()
+
+        else:
+            
+            
+            async with state.proxy() as data:
+               data['assist'] = check_telegram[0][0]
+
+            if len(check_assistenti) == 1:
+                msg = ''' L'assistente in servizio in questo momento è: \n{}'''.format(check_assistenti[0][0].strip().title())
+            else:
+                l_assistenti = '\n'.join ([ i[0].strip().title() for i in check_assistenti])
+                msg  = '''Gli assistenti in servizio in questo momento sono: \n{}'''.format(l_assistenti)
+
+            await bot.send_message(message.chat.id, msg)
+            await state.finish()
+            
+            
 
 
 
@@ -556,6 +624,7 @@ async def send_help(message: types.Message):
     \n{0} help: Scopri le funzionalità del BOT
     \n{0} telegram_id: Ottieni il codice telegram da comuicare per abilitare il bot sul dispositivo
     \n{0} servizio: Visualizza i servizi assegnati
+    \n{0} assistenti: Visualizza il nome degli assistenti in turno
     \n\nPuoi accedere a questi comandi cliccando sul Menu in basso a sinistra o digitando il comando desiderato preceduto dal carattere '/'  (es. /telegram_id). """.format(emoji.emojize(":arrow_forward:",use_aliases=True)))
     ##\n\nTramite questo BOT potrai anche ricevere notifiche dal sistema. Per fare questo devi inserire il tuo telegram_id nel portale e attivare le notifiche.
     #\n{0} webgis: restituisce il link al webgis
