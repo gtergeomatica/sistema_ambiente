@@ -33,6 +33,7 @@ logging.basicConfig(
 logging.info('*'*20 + 'NUOVA ESECUZIONE' + '*'*20)
 
 filename='{}/log/rfid_data.csv'.format(spath) #, datetime.now().strftime("%Y%m%d_%H%M%S"))
+
 try:
     with FTP(ftp_host_g, ftp_user_g_01, ftp_pwd_g_01) as ftp:
         logging.info('{}'.format(ftp.dir()))
