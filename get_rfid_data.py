@@ -30,7 +30,6 @@ logging.basicConfig(
     #filename='{}/log/get_rfid.log'.format(spath),
     level=logging.INFO)
 
-
 logging.info('*'*20 + 'NUOVA ESECUZIONE' + '*'*20)
 
 filename='{}/log/rfid_data.csv'.format(spath) #, datetime.now().strftime("%Y%m%d_%H%M%S"))
@@ -43,7 +42,6 @@ except:
     logging.error('Trasferimento non riuscito')
     logging.exception('')
     os._exit(1)
-    
 
 
 
