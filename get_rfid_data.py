@@ -19,8 +19,9 @@ from datetime import datetime
 import psycopg2
 import logging
 import pandas as pd
-import csv
 import pathlib
+from io import BytesIO, StringIO
+
 
 from sqlalchemy import create_engine
 from credenziali import *
@@ -43,7 +44,7 @@ def initLogger():
     logging.info("*" * 20 + "NUOVA ESECUZIONE" + "*" * 20)
 
 
-def getFileList(ftp):
+def getCsvFileList(ftp):
     """
     list of csv file in the folder
     """
@@ -57,45 +58,70 @@ def getFileList(ftp):
             logging.error("No files in this directory")
         else:
             raise
+
+    for file in files:
+        if pathlib.Path(file).suffix != ".csv":
+            files.remove(file)
+
     return files
 
 
-def csvGrabber(listFile, ftp):
+def filesGrabber(listFile, ftp):
     """
-    download files from ftp folder to actual folder if they are csv
+    return a dict with name of the csv file as key and pd.dataframe as value
     """
+
+    dicts = {}
     for file in listFile:
-        with open(file, "wb") as downloadedFile:
-            ftp.retrbinary(f"RETR {file}", downloadedFile.write)
-            logging.info(f"{file} è stato scaricato")
 
-        downloadedFile.close()
+        r = BytesIO()
+        ftp.retrbinary(f"RETR {file}", r.write)
+
+        r.seek(0)
+        df = pd.read_csv(r, delimiter="|")
+
+        dicts[file] = df
+
+    return dicts
 
 
-def parser():
-    pass
+def takeInfo(dictionary):
+    """
+    take all the filed we need
+    """
+    for k in dictionary:
+        # dictionary[k]["Timestamp"] = dictionary[k]["Data"] + dictionary[k]["Orario"]
+        dictionary[k] = dictionary[k][
+            ["Cod  ", "X", "Y", "Data", "Orario", "Indirizzo"]
+        ]
+        # al momento riempio con colonna vuota
+        dictionary[k].insert(1, "cod_bracciale", [0, 0, 0], True)
 
 
 def main():
+
     initLogger()
+
     try:
         with FTP(ftp_host_g, ftp_user_g_01, ftp_pwd_g_01) as ftp:
 
             dir_list = []
             ftp.dir(dir_list.append)
-            logging.info(f"lista di file presenti {dir_list}")
+            logging.info(f"lista di file presenti su area ftp {dir_list}")
 
-            fileList = getFileList(ftp)
-
-            filename = "letture_bracciale.csv"
-            csvGrabber(fileList, ftp)
+            fileList = getCsvFileList(ftp)
+            dictDf = filesGrabber(fileList, ftp)
 
             ftp.quit()
+            logging.info(f"lista di file parsati nello script {[(k) for k in dictDf]}")
 
     except:
         logging.error("Trasferimento non riuscito")
         logging.exception("")
         os._exit(1)
+
+    # Cod, cod_bracciale, X, Y, Data, Orario, Indirizzo
+    takeInfo(dictDf)
 
     logging.info("*" * 20 + "FINE ESECUZIONE" + "*" * 20)
 
