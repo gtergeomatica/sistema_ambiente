@@ -8,20 +8,19 @@ dei dati dei tag rfid dei cestini
 
 """
 
-from ftplib import FTP
+from ftplib import FTP, error_perm
 import os
 import sys
 import shutil
 import re
 import glob
 import getopt
-from datetime import datetime
+from datetime import datetime, timedelta
 import psycopg2
 import logging
 import pandas as pd
 import pathlib
-from io import BytesIO, StringIO
-
+from io import BytesIO
 
 from sqlalchemy import create_engine
 from credenziali import *
@@ -40,20 +39,39 @@ def initLogger():
         filename=f"{spath}/log/get_rfid.log",
         level=logging.INFO,
     )
-
     logging.info("*" * 20 + "NUOVA ESECUZIONE" + "*" * 20)
+
+
+def connectToFtp(host, username, password):
+    """
+    connect to ftp area
+    """
+
+    try:
+        # with FTP(host, username, password) as ftp:
+        ftp = FTP(host, username, password)
+        dir_list = []
+        ftp.dir(dir_list.append)
+        logging.info(f"lista di file presenti su area ftp {dir_list}")
+
+        return ftp
+
+    except:
+        logging.error("Connessione ad area ftp non riuscita")
+        logging.exception("")
+        os._exit(1)
 
 
 def getCsvFileList(ftp):
     """
-    list of csv file in the folder
+    list only the csv files in the folder of the ftp area
     """
 
     files = []
 
     try:
         files = ftp.nlst()
-    except ftplib.error_perm as resp:
+    except error_perm as resp:
         if str(resp) == "550 No files found":
             logging.error("No files in this directory")
         else:
@@ -66,9 +84,49 @@ def getCsvFileList(ftp):
     return files
 
 
+def checkFileisInDB(listOfFile, cur, ftp):
+    """
+    check if the csv file name is in the db cestini.storicoFile (so it checks if this filename has been already parsed)
+    check if the time of parsing - now > 7 days in order to clean the ftp area
+    """
+
+    sql = "SELECT EXISTS (SELECT nome_file FROM  cestini.storicoFile WHERE nome_file = %s)"
+
+    sql2 = "SELECT data_caricamento FROM  cestini.storicoFile WHERE nome_file = %s"
+
+    for d in listOfFile:
+        try:
+
+            cur.execute(sql, (d,))
+            boolValue = cur.fetchone()[0]
+
+            if not boolValue:
+                continue
+
+            listOfFile.remove(d)
+            logging.info(f"il file {d} è già presente nel Db e non verrà parsato")
+
+            cur.execute(sql2, (d,))
+            dateParse = cur.fetchone()[0]
+            a = datetime.now() - dateParse
+
+            if (datetime.now() - dateParse) < timedelta(days=7):
+                continue
+
+            # ftp.delete(d)
+            logging.info(
+                f"il file {d} è stato parsato {dateParse} ed è stato appena eliminato dall'area ftp"
+            )
+
+        except:
+            logging.error("Sql command fail on sendFileToTableStorico function")
+            logging.exception("")
+            os._exit(1)
+
+
 def filesGrabber(listFile, ftp):
     """
-    return a dict with name of the csv file as key and pd.dataframe as value
+    return a dict with name of the csv file as key and pd.dataframe with content of the csv file as value
     """
 
     dicts = {}
@@ -78,10 +136,11 @@ def filesGrabber(listFile, ftp):
         ftp.retrbinary(f"RETR {file}", r.write)
 
         r.seek(0)
-        df = pd.read_csv(r, delimiter="|")
+        df = pd.read_csv(r, delimiter="|", encoding="latin-1")
 
         dicts[file] = df
 
+    logging.info(f"lista di file parsati nello script {[(k) for k in dicts]}")
     return dicts
 
 
@@ -89,27 +148,11 @@ def takeInfo(dictionary):
     """
     take all the filed we need: cod, cod_bracciale, x, y, data, orario, indirizzo
     """
+
     for k in dictionary:
-        # dictionary[k]["Timestamp"] = dictionary[k]["Data"] + dictionary[k]["Orario"]
         dictionary[k] = dictionary[k][
-            ["Cod  ", "X", "Y", "Data", "Orario", "Indirizzo"]
+            ["cod_cestino", "cod_bracciale", "x", "y", "data", "orario", "indirizzo"]
         ]
-
-        # al momento riempio con colonna vuota
-        dictionary[k].insert(1, "cod_bracciale", [0, 0, 0], True)
-
-        # correzione
-        dictionary[k].rename(
-            columns={
-                "Cod  ": "cod",
-                "X": "x",
-                "Y": "y",
-                "Data": "data",
-                "Orario": "orario",
-                "Indirizzo": "indirizzo",
-            },
-            inplace=True,
-        )
 
         # change the "," with "." in X and Y
         dictionary[k]["x"] = dictionary[k]["x"].apply(lambda x: x.replace(",", ".", 1))
@@ -118,12 +161,12 @@ def takeInfo(dictionary):
 
 def sqlStatement():
     """
-    return a list with the queries
+    return a list with the queries, at the moment the only queries are the creation of table
     """
 
     tableCreateSql = """ CREATE TABLE IF NOT EXISTS cestini.bracciali (
                      --id serial primary key,
-                    "cod" varchar primary key,
+                    "cod_cestino" varchar primary key,
                     "cod_bracciale" varchar,
                     "x" DOUBLE PRECISION,
                     "y" DOUBLE PRECISION,
@@ -152,19 +195,26 @@ def initDbConnection():
     """
     set up for the connection
     """
+    try:
+        logging.info("Connessione al db")
+        conn = psycopg2.connect(
+            dbname=db, port=port, user=user, password=pwd, host=host
+        )
 
-    logging.info("Connessione al db")
-    conn = psycopg2.connect(dbname=db, port=port, user=user, password=pwd, host=host)
+        cur = conn.cursor()
+        conn.autocommit = True
 
-    cur = conn.cursor()
-    conn.autocommit = True
+        return cur, conn
 
-    return cur, conn
+    except:
+        logging.error("Connessione al DB non riuscita")
+        logging.exception("")
+        os._exit(1)
 
 
 def executeSqlQuery(cur, sqlQueryList):
     """
-    it executes the queries one create the table if it does not exist, the other clean the table from existing data
+    it executes the queries
     """
 
     for idx, s in enumerate(sqlQueryList):
@@ -190,9 +240,9 @@ def executeSqlQuery(cur, sqlQueryList):
             os._exit(1)
 
 
-def sendDataToDb(dictionary):
+def sendDataToDb(dictionary, cur):
     """
-    send data to DB
+    send data to DB in the table cestini.bracciali and store the file name of the csv file in another table called sotricoFile
     """
 
     for k in dictionary:
@@ -212,28 +262,30 @@ def sendDataToDb(dictionary):
                 index=False,
             )
             logging.info(f"dati inseriti per {k}")
+
+            sendSingleFileToTableStorico(k, cur)
         except:
             logging.error("Sql command fail")
             logging.exception("")
             os._exit(1)
 
 
-def sendFileToTableStorico(listOfFile, cur):
+def sendSingleFileToTableStorico(file, cur):
     """
-    insert in already created table
+    insert name of the csv file in table stroricoFile
     """
 
     sql = "INSERT INTO cestini.storicoFile(nome_file) VALUES(%s)"
 
-    for d in listOfFile:
-        try:
-
-            cur.execute(sql, (d,))
-            logging.info(f"nome del file: {d}, inserito in DB in data {datetime.now()}")
-        except:
-            logging.error("Sql command fail on sendFileToTableStorico function")
-            logging.exception("")
-            os._exit(1)
+    try:
+        cur.execute(sql, (file,))
+        logging.info(
+            f"nome del file: {file}, inserito in cestini.storicoFile in data {datetime.now()}"
+        )
+    except:
+        logging.error("Sql command fail on sendFileToTableStorico function")
+        logging.exception("")
+        os._exit(1)
 
 
 def quitConncetion(cur, conn):
@@ -251,35 +303,25 @@ def main():
 
     initLogger()
 
-    try:
-        with FTP(ftp_host_g, ftp_user_g_01, ftp_pwd_g_01) as ftp:
-
-            dir_list = []
-            ftp.dir(dir_list.append)
-            logging.info(f"lista di file presenti su area ftp {dir_list}")
-
-            fileList = getCsvFileList(ftp)
-            dictDf = filesGrabber(fileList, ftp)
-
-            ftp.quit()
-            logging.info(f"lista di file parsati nello script {[(k) for k in dictDf]}")
-
-    except:
-        logging.error("Trasferimento non riuscito")
-        logging.exception("")
-        os._exit(1)
-
-    takeInfo(dictDf)
-
-    sqlQuery = sqlStatement()
+    ftp = connectToFtp(ftp_host_g, ftp_user_g_01, ftp_pwd_g_01)
 
     cur, conn = initDbConnection()
 
+    sqlQuery = sqlStatement()
+
     executeSqlQuery(cur, sqlQuery)
 
-    sendDataToDb(dictDf)
+    fileList = getCsvFileList(ftp)
 
-    sendFileToTableStorico(fileList, cur)
+    checkFileisInDB(fileList, cur, ftp)
+
+    dictDf = filesGrabber(fileList, ftp)
+
+    ftp.quit()
+
+    takeInfo(dictDf)
+
+    sendDataToDb(dictDf, cur)
 
     quitConncetion(cur, conn)
 
@@ -287,4 +329,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
