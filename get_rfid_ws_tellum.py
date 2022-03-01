@@ -1,18 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import logging
 import os
 from datetime import datetime, timedelta
 import json
-import token
 import requests
 import psycopg2
 import logging
-import pandas as pd
-import pathlib
-from io import BytesIO
 from sqlalchemy import create_engine, text
 from credenziali import *
-from subprocess import *
-import shlex
+
+
 def initLogger():
     """
     define log file as simple as possibile
@@ -28,13 +26,18 @@ def initLogger():
     )
     logging.info("*" * 20 + "NUOVA ESECUZIONE" + "*" * 20)
 
+
+# headers usato di default nelle chiamate
 headersDeafuult = {
     'Cookie': 'ARRAffinity=922e9738a217d969207539a314a23be570278def2f467b4687460ebde8af52e3; ARRAffinitySameSite=922e9738a217d969207539a314a23be570278def2f467b4687460ebde8af52e3'
     }
 
+# url condiviso da tutte le chiamate
+root = "https://www.satfinder.it/services/extern/"
+
 def requestHandling(type ,url, payloadT={}, headersT = headersDeafuult):
     """
-    Per non scrivere troppo (ctr c/ctrl v) scrivo una funzione che fa le chiamate e restiuisce la risposta via testo,
+    Per non scrivere troppo scrivo una funzione che fa le chiamate e restiuisce la risposta via testo,
     se per ragioni di performance non andasse bene faccio un altra maniera
     """
     
@@ -59,7 +62,7 @@ def getToken():
     """
     get token from api 4.1.1 di SATfinderService_Interfacciamento.pdf
     """
-    url = f"https://www.satfinder.it/services/extern/authentication?username={usernameTellus}&password={passwordTellus}"
+    url = f"{root}/authentication?username={usernameTellus}&password={passwordTellus}"
 
     responseFull = requestHandling("GET", url)
     token = responseFull['token']
@@ -71,7 +74,7 @@ def getFleetId(token):
     """ 
     get fleet or groups 4.1.2 di SATfinderService_Interfacciamento.pdf
     """
-    url = f"https://www.satfinder.it/services/extern/groups?token={token}"
+    url = f"{root}/groups?token={token}"
     responseFull = requestHandling("GET", url)
     
     return responseFull[0]['fleets'][0]['id']
@@ -81,7 +84,7 @@ def getDispositivi(id, token):
     """
     Richiesta Elenco Dispositivi disponibili 4.2.1
     """
-    url = f"https://www.satfinder.it/services/extern/devices?token={token}"
+    url = f"{root}/devices?token={token}"
     
     payload = json.dumps([id])
     headers= {
@@ -102,10 +105,17 @@ def getEventoInteressante(token, listaDispo):
     Nello specifico, per ogni dispositivo restituito nella chiamata 4.2.1, otterrete l’elenco di eventi 
     presenti nell’arco temporale richiesto, tra questi l’evento 296 è quello che riguarda le letture.
     """
-    url = f"https://www.satfinder.it/services/extern/devicedata?token={token}&deviceId=7572&dateStart=2022-02-28T00:00:00&dateEnd=2022-02-28T23:00:00"
+    # per ogni deviceId e per la data e ora che ti interessano
+    for dispositivo in listaDispo:
 
-    responseFull = requestHandling("GET", url)
-    print( responseFull["events"][4])
+        url = f"{root}/devicedata?token={token}&deviceId={dispositivo}&dateStart=2022-02-28T00:00:00&dateEnd=2022-02-28T23:00:00"
+
+        responseFull = requestHandling("GET", url)
+        #della lista di eventi preventi cerchi il 296
+        for evento in responseFull["events"]:
+            if evento['idEvent'] == 296:
+                print (evento)
+        print( "***************")
 
 def main():
 
@@ -119,5 +129,4 @@ def main():
 
 
 if __name__ == "__main__":
-    
     main()
