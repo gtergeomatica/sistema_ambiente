@@ -244,7 +244,7 @@ def sendDataToDb(dictionary, cur):
     #send data to DB in the table cestini.bracciali and store the file name of the csv file in another table called storicoFile
     create temporary table and upload DataFrame  and merge temp_table into main_table (cestini.bracciali) to upsert
     """
-
+    
     for k in dictionary:
         # connString = 'postgres://{}:{}@{}/{}'.format(user, pwd, host, db )
         connString = f"postgres://{user}:{pwd}@{host}/{db}"
