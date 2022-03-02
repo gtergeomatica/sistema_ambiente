@@ -241,7 +241,7 @@ def executeSqlQuery(cur, sqlQueryList):
 
 def sendDataToDb(dictionary, cur):
     """
-    #send data to DB in the table cestini.bracciali and store the file name of the csv file in another table called sotricoFile
+    #send data to DB in the table cestini.bracciali and store the file name of the csv file in another table called storicoFile
     create temporary table and upload DataFrame  and merge temp_table into main_table (cestini.bracciali) to upsert
     """
 
