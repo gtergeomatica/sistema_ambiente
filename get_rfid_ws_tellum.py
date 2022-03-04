@@ -234,7 +234,7 @@ def getEventoInteressante(token, listaDispo):
 
     #limite inferiore (tempo inizio) finestra temporale considerata, i.e 45 minuti --> se lo script gira ogni 30 min ci sono 15 min di overlap
     #margine di sicurezza
-    dateStart = (dateEnd - timedelta(minutes = 45)).isoformat()
+    dateStart = (dateEnd - timedelta(minutes = 35)).isoformat()
     
     logging.info(f"Script sta girando alle ore {dateEnd}, interroga i seguenti dispositivi {listaDispo} in finestra temporale a partire da {dateStart}")
     
@@ -256,7 +256,7 @@ def getEventoInteressante(token, listaDispo):
             
             if evento['info'][0:4] != "SALC":
                 continue
-            
+
             #if evento['idEvent'] == 296:
             try:
                 # parse della data e creazioni di due variabile che andranno a popolare la lista e in seguito andranno inserite nel DB
@@ -266,7 +266,7 @@ def getEventoInteressante(token, listaDispo):
 
                 #lista da inserire nella tabella temp_table e poi in cestini.bracciali
                 listTosend = [ 
-                                evento['info'], 
+                                evento['info'].split(";")[0], 
                                 dispositivo[1], 
                                 evento['xcoord'],
                                 evento['ycoord'],
@@ -276,6 +276,7 @@ def getEventoInteressante(token, listaDispo):
                             ]
                 
                 listToDf.append(listTosend)
+
             except:
                 logging.error(f"Impossibile scrivere la lista da inserire nel DB per {dispositivo} contiene{evento}")
 
